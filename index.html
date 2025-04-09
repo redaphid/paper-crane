@@ -8,27 +8,48 @@
 			"imports": {
 				"preact": "https://esm.sh/preact@10.26.0",
 				"htm": "https://esm.sh/htm@3.1.1",
-				"chai": "https://esm.sh/chai@5.2.0"
+				"chai": "https://esm.sh/chai@5.2.0",
+				"twgl": "https://esm.sh/twgl.js@5.5.3",
+				"zod": "https://esm.sh/zod@3.24.2"
 			}
 		}
 	</script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.6.0/mocha.min.js"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.6.0/mocha.min.css" />
 	<style>
+		* {
+			box-sizing: border-box;
+		}
+
 		body {
+			margin: 0;
 			display: flex;
 			width: 100vw;
 			min-height: 100vh;
+			flex-direction: column;
 		}
 
 		canvas {
 			width: 100%;
 			height: 100%;
+			border: 1px solid orange;
+			flex: 1;
+		}
+
+		#paper-cranes {
+			width: 100%;
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			flex-wrap: wrap;
+			flex: 1;
 		}
 	</style>
 </head>
 
-<body id="mocha">
+<body>
+	<div id="mocha"></div>
+	<div id="paper-cranes"></div>
 </body>
 <script src="./tests.mjs" type="module"></script>
 
