@@ -14,7 +14,7 @@ import wrap, { shaderToyCompatibleFeatures } from './shader-wrapper.mjs'
 import { z } from 'zod'
 const makeSchema = z.instanceof(HTMLCanvasElement)
 const renderSchema = z.object({
-    fragmentShader: z.string(),
+    fragmentShader: z.string().optional(),
     features: z.record(z.string(), z.any()).optional(),
 })
 // Simple full-screen quad
@@ -153,15 +153,30 @@ export const make = (deps) => {
 
         }
     }
-    const render = (props) => {
-        let { fragmentShader, features={}} = renderSchema.parse(props)
-        features = defaultFeatures(features)
-        const newFragmentShader = wrap(fragmentShader, features)
+    const getShaderAndFeatures = (props) => {
+        // if props is undefined, then use the last fragment shader and features
+        if(props === undefined) return {fragmentShader: lastFragmentShader, features: {}}
+        // if it is a string, it is the fragment shader
+        if(typeof props === 'string') return {fragmentShader: wrap(props, {}), features: {}}
+        // if it is not an object at this point, it is an error
+        if(typeof props !== 'object') throw new Error('props must be an object or a string')
+        // if we don't have the features key, it is the features
+        let {fragmentShader, features} = props
+        const newFeatures = features ? defaultFeatures(features) : defaultFeatures(props)
+        const newFragmentShader = fragmentShader ? wrap(fragmentShader, newFeatures) : lastFragmentShader
+        return {fragmentShader: newFragmentShader, features: newFeatures}
+    }
 
-        if (newFragmentShader !== lastFragmentShader) {
-            lastFragmentShader = newFragmentShader
-            regenerateProgramInfo(newFragmentShader)
+    const render = (props) => {
+        let changedShader = false
+        // if there is no features key, then the whole object is the features
+        const {fragmentShader, features} = getShaderAndFeatures(props)
+        if(!fragmentShader) throw new Error('fragmentShader is required')
+        if (fragmentShader !== lastFragmentShader) {
+            changedShader = true
+            regenerateProgramInfo(fragmentShader)
         }
+        lastFragmentShader = fragmentShader
 
         const {time} = features
         const frameTime = time - lastRender
@@ -211,8 +226,8 @@ export const make = (deps) => {
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, frame.framebuffer)
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
         gl.blitFramebuffer(0, 0, frame.width, frame.height, 0, 0, gl.canvas.width, gl.canvas.height, gl.COLOR_BUFFER_BIT, gl.NEAREST)
-
         frameNumber++
+        return changedShader
     }
 
     return render
