@@ -8,14 +8,14 @@ import {
     setUniforms,
     drawBufferInfo,
 } from 'twgl'
-import wrap from './shader-wrapper.mjs'
+
+import wrap, { shaderToyCompatibleFeatures } from './shader-wrapper.mjs'
 
 import { z } from 'zod'
 const makeSchema = z.instanceof(HTMLCanvasElement)
 const renderSchema = z.object({
     fragmentShader: z.string(),
-    time: z.number().optional(),
-    features: z.object().optional(),
+    features: z.record(z.string(), z.any()).optional(),
 })
 // Simple full-screen quad
 const positions = [
@@ -133,28 +133,38 @@ export const make = (deps) => {
     let renderTimes = []
     let lastResolutionRatio = 1
 
+
+    const regenerateProgramInfo = (fragmentShader) => {
+        programInfo = createProgramInfo(gl, [defaultVertexShader, fragmentShader])
+        if (!programInfo?.program) {
+            handleShaderError(gl, fragmentShader);
+            programInfo = null;
+        }
+        gl.useProgram(programInfo.program)
+    }
+
+    const defaultFeatures = (features) => {
+
+        return {
+            time: performance.now() - startTime,
+            frame: ++frameNumber,
+            ...shaderToyCompatibleFeatures(features),
+            ...features,
+
+        }
+    }
     const render = (props) => {
-        const { fragmentShader, time = performance.now() - startTime, features ={} } = renderSchema.parse(props)
-        if (fragmentShader !== lastFragmentShader) {
-            const wrappedFragmentShader = wrap(fragmentShader)
+        let { fragmentShader, features={}} = renderSchema.parse(props)
+        features = defaultFeatures(features)
+        const newFragmentShader = wrap(fragmentShader, features)
 
-            const newProgramInfo = createProgramInfo(gl, [defaultVertexShader, wrappedFragmentShader])
-            if (!newProgramInfo?.program) {
-                handleShaderError(gl, wrappedFragmentShader);
-                programInfo = null;
-                lastFragmentShader = wrappedFragmentShader;
-                return;
-            }
-
-            gl.useProgram(newProgramInfo.program)
-            programInfo = newProgramInfo
-            lastFragmentShader = wrappedFragmentShader
+        if (newFragmentShader !== lastFragmentShader) {
+            lastFragmentShader = newFragmentShader
+            regenerateProgramInfo(newFragmentShader)
         }
 
-        if (!programInfo) return
-
-        const currentTime = performance.now()
-        const frameTime = currentTime - lastRender
+        const {time} = features
+        const frameTime = time - lastRender
 
         const  resolutionRatio = calculateResolutionRatio(frameTime, renderTimes, lastResolutionRatio)
 
@@ -165,11 +175,10 @@ export const make = (deps) => {
             renderTimes = []
         }
 
-        lastRender = currentTime
-
+        lastRender = time
         const frame = frameBuffers[frameNumber % 2]
         const prevFrame = frameBuffers[(frameNumber + 1) % 2]
-
+        debugger
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, frame.framebuffer)
 
         let uniforms = {
