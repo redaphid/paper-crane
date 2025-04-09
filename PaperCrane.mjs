@@ -132,7 +132,7 @@ export const make = (deps) => {
     let lastFragmentShader
     let renderTimes = []
     let lastResolutionRatio = 1
-
+    let previousFeatures = {}
 
     const regenerateProgramInfo = (fragmentShader) => {
         programInfo = createProgramInfo(gl, [defaultVertexShader, fragmentShader])
@@ -155,14 +155,14 @@ export const make = (deps) => {
     }
     const getShaderAndFeatures = (props) => {
         // if props is undefined, then use the last fragment shader and features
-        if(props === undefined) return {fragmentShader: lastFragmentShader, features: {}}
+        if(props === undefined) return {fragmentShader: lastFragmentShader, features: {...previousFeatures}}
         // if it is a string, it is the fragment shader
-        if(typeof props === 'string') return {fragmentShader: wrap(props, {}), features: {}}
+        if(typeof props === 'string') return {fragmentShader: wrap(props, {...previousFeatures}), features: {...previousFeatures}}
         // if it is not an object at this point, it is an error
         if(typeof props !== 'object') throw new Error('props must be an object or a string')
         // if we don't have the features key, it is the features
         let {fragmentShader, features} = props
-        const newFeatures = features ? defaultFeatures(features) : defaultFeatures(props)
+        const newFeatures = features ? defaultFeatures({...previousFeatures, ...features}) : defaultFeatures({...previousFeatures, ...props})
         const newFragmentShader = fragmentShader ? wrap(fragmentShader, newFeatures) : lastFragmentShader
         return {fragmentShader: newFragmentShader, features: newFeatures}
     }
@@ -174,6 +174,7 @@ export const make = (deps) => {
         if(!fragmentShader) throw new Error('fragmentShader is required')
         if (fragmentShader !== lastFragmentShader) {
             changedShader = true
+            previousFeatures = features
             regenerateProgramInfo(fragmentShader)
         }
         lastFragmentShader = fragmentShader

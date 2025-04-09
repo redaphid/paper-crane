@@ -55,12 +55,13 @@ describe("PaperCrane", () => {
       })
     })
     describe("When called with a feature", () => {
+      const shader = `
+      void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+        fragColor = vec4(0.0, 0.0, blue, 1.0);
+      }
+    `
       beforeEach(() => {
-        render({fragmentShader: `
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            fragColor = vec4(0.0, 0.0, blue, 1.0);
-          }
-        `, features: { blue: 0.5 }})
+          render({fragmentShader:shader, features: { blue: 0.5 }})
       })
       it("should render a blue square", () => {
         const pixel = getPixelColor(canvas, 0, 0)
@@ -68,12 +69,9 @@ describe("PaperCrane", () => {
       })
       describe("When called and that feature changes", () => {
         let res
+
         beforeEach(() => {
-          res = render({fragmentShader: `
-            void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-              fragColor = vec4(0.0, 0.0, blue, 1.0);
-            }
-          `, features: { blue: 1.0 }})
+          res = render({fragmentShader: shader, features: { blue: 1.0 }})
         })
         it("should render a blue square", () => {
           const pixel = getPixelColor(canvas, 0, 0)
@@ -84,21 +82,29 @@ describe("PaperCrane", () => {
         })
       })
       describe("When called without a shader the next time", () => {
+        let res
         beforeEach(() => {
-          render({ blue: 0.25 })
+          res = render({ blue: 0.25 })
         })
         it("should be fine with it", () => {
           const pixel = getPixelColor(canvas, 0, 0)
           expect(pixel).to.deep.equal(new Uint8Array([0, 0, 64, 255]))
         })
-      })
-      describe("When called with a string", () => {
-        beforeEach(() => {
-          render("void mainImage(out vec4 fragColor, in vec2 fragCoord) { fragColor = vec4(0.0, 1.0, 0.0, 1.0); }")
+        it("should not tell us that the shader changed", () => {
+          expect(res).to.be.false
         })
-        it("should render the green square", () => {
+      })
+      describe("When called with the same shader string as the last time but without features", () => {
+        let res
+        beforeEach(() => {
+          res = render(shader)
+        })
+        it("should be fine with it", () => {
           const pixel = getPixelColor(canvas, 0, 0)
-          expect(pixel).to.deep.equal(new Uint8Array([0, 255, 0, 255]))
+          expect(pixel).to.deep.equal(new Uint8Array([0, 0, 128, 255]))
+        })
+        it("should not tell us that the shader changed", () => {
+          expect(res).to.be.false
         })
       })
     })
