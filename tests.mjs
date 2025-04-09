@@ -107,6 +107,19 @@ describe("PaperCrane", () => {
           expect(res).to.be.false
         })
       })
+      describe("When called without any arguments", () => {
+        let res
+        beforeEach(() => {
+          res = render()
+        })
+        it("should render a blue square", () => {
+          const pixel = getPixelColor(canvas, 0, 0)
+          expect(pixel).to.deep.equal(new Uint8Array([0, 0, 128, 255]))
+        })
+        it("should not tell us that the shader changed", () => {
+          expect(res).to.be.false
+        })
+      })
     })
   })
 })
