@@ -1,0 +1,42 @@
+<!-- public/test-visualizer.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Visualizer Test</title>
+</head>
+
+<body>
+	<div id="root"></div>
+
+	<!-- Use type="module" for ES Module imports -->
+	<script type="module">
+		// Import Preact and htm (adjust paths if you serve them locally)
+		import { render, h } from 'https://unpkg.com/preact@10.19.6/dist/preact.mjs';
+		import { default as htm } from 'https://unpkg.com/htm@3.1.1/dist/htm.mjs';
+
+		// Bind htm to Preact's h function
+		const html = htm.bind(h);
+
+		// Import your PaperCrane
+		// Adjust path relative to how this HTML file is served.
+		// Assumes serving from project root or similar structure.
+		import { PaperCrane } from '../src/PaperCrane.js';
+		// Use spread syntax for cleaner merging
+		const mergedProps = { ...defaultProps, ...props };
+
+		const container = document.getElementById('root');
+		// Clear previous render for clean state
+		render(null, container);
+		// Use requestAnimationFrame for potentially smoother cleanup before re-render
+		await new Promise(resolve => requestAnimationFrame(resolve));
+		render(
+			html`<${PaperCrane} />`,
+			container
+		);
+	</script>
+</body>
+
+</html>
