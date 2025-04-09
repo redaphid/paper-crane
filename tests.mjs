@@ -121,6 +121,19 @@ describe("PaperCrane", () => {
         })
       })
     })
+    describe("When called with a shader that references iTime", () => {
+      beforeEach(() => {
+        render({fragmentShader: `
+          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+            fragColor = vec4(0.0, 0.0, sin(iTime), 1.0);
+          }
+        `})
+      })
+      it("should render a black square", () => {
+        const pixel = getPixelColor(canvas, 0, 0)
+        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 0, 255]))
+      })
+    })
   })
 })
 
