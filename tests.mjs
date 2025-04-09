@@ -33,6 +33,21 @@ describe("PaperCrane", () => {
         expect(pixels).to.deep.equal(new Uint8Array([255, 0, 0, 255]))
 
       })
+      describe("When later called with a green fragment shader", () => {
+        beforeEach(() => {
+          render({fragmentShader: `
+            void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+              fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+            }
+          `})
+        })
+        it("should render a green square", () => {
+          const gl = canvas.getContext("webgl2")
+          const pixels = new Uint8Array(4)
+          gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+          expect(pixels).to.deep.equal(new Uint8Array([0, 255, 0, 255]))
+        })
+      })
     })
     describe("When called with a feature", () => {
       beforeEach(() => {

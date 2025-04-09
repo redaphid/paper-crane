@@ -178,7 +178,6 @@ export const make = (deps) => {
         lastRender = time
         const frame = frameBuffers[frameNumber % 2]
         const prevFrame = frameBuffers[(frameNumber + 1) % 2]
-        debugger
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, frame.framebuffer)
 
         let uniforms = {
