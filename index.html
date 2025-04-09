@@ -6,13 +6,13 @@
 	<script type="importmap">
 		{
 			"imports": {
-				"preact": "https://cdnjs.cloudflare.com/ajax/libs/preact/10.26.0/preact.min.js",
-				"htm": "https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.js",
-				"mocha": "https://cdnjs.cloudflare.com/ajax/libs/mocha/11.2.0/mocha.min.js",
-				"chai": "https://cdnjs.cloudflare.com/ajax/libs/chai/5.2.0/chai.js"
+				"preact": "https://esm.sh/preact@10.26.0",
+				"htm": "https://esm.sh/htm@3.1.1",
+				"chai": "https://esm.sh/chai@5.2.0"
 			}
 		}
 	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.6.0/mocha.min.js"></script>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.6.0/mocha.min.css" />
 	<style>
 		body {
@@ -28,7 +28,7 @@
 	</style>
 </head>
 
-<body>
+<body id="mocha">
 </body>
 <script src="./tests.mjs" type="module"></script>
 
