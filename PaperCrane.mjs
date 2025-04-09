@@ -9,14 +9,11 @@ import {
     drawBufferInfo,
 } from 'twgl'
 
-import wrap, { shaderToyCompatibleFeatures } from './shader-wrapper.mjs'
+import { wrap as wrapShader } from './shader-wrapper.mjs'
+import { wrap as wrapFeatures } from './Features.mjs'
 
 import { z } from 'zod'
 const makeSchema = z.instanceof(HTMLCanvasElement)
-const renderSchema = z.object({
-    fragmentShader: z.string().optional(),
-    features: z.record(z.string(), z.any()).optional(),
-})
 // Simple full-screen quad
 const positions = [
     -1, -1, 0,
@@ -141,29 +138,20 @@ export const make = (deps) => {
             programInfo = null;
         }
         gl.useProgram(programInfo.program)
+        return programInfo
     }
 
-    const defaultFeatures = (features) => {
-
-        return {
-            time: performance.now() - startTime,
-            frame: ++frameNumber,
-            ...shaderToyCompatibleFeatures(features),
-            ...features,
-
-        }
-    }
     const getShaderAndFeatures = (props) => {
         // if props is undefined, then use the last fragment shader and features
         if(props === undefined) return {fragmentShader: lastFragmentShader, features: {...previousFeatures}}
-        // if it is a string, it is the fragment shader
-        if(typeof props === 'string') return {fragmentShader: wrap(props, {...previousFeatures}), features: {...previousFeatures}}
         // if it is not an object at this point, it is an error
+        if(typeof props === 'string') return {fragmentShader: wrapShader(props), features: {...previousFeatures}}
         if(typeof props !== 'object') throw new Error('props must be an object or a string')
         // if we don't have the features key, it is the features
         let {fragmentShader, features} = props
-        const newFeatures = features ? defaultFeatures({...previousFeatures, ...features}) : defaultFeatures({...previousFeatures, ...props})
-        const newFragmentShader = fragmentShader ? wrap(fragmentShader, newFeatures) : lastFragmentShader
+        features ??= props
+        const newFeatures = wrapFeatures(updateFeatures({...previousFeatures, ...features}))
+        const newFragmentShader = fragmentShader ? wrapShader(fragmentShader, newFeatures) : lastFragmentShader
         return {fragmentShader: newFragmentShader, features: newFeatures}
     }
 
@@ -215,7 +203,7 @@ export const make = (deps) => {
         }
         // filter out null, undefined, and NaN values
         uniforms = Object.fromEntries(
-            Object.entries(uniforms).filter(([, value]) => value !== null && value !== undefined && !Number.isNaN(value))
+            Object.entries(uniforms).filter(([, value]) => Number.isFinite(value))
         )
         // resolve uniform references;
         uniforms = resolveReferences(uniforms)

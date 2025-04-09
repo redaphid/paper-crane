@@ -45,9 +45,4 @@ const wrap = (shader, features) =>  {
     newShader = insertMain(newShader)
     return newShader
 }
-
-export const shaderToyCompatibleFeatures = (features) => {
-    return features
-}
-
 export default wrap

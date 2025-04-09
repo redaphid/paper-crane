@@ -11,7 +11,6 @@ const getPixelColor = (canvas, x, y) => {
   return pixel
 }
 describe("PaperCrane", () => {
-  describe("When created", () => {
     let render
     /** @type {HTMLCanvasElement} */
     let canvas
@@ -121,20 +120,19 @@ describe("PaperCrane", () => {
         })
       })
     })
-    describe("When called with a shader that references iTime", () => {
+    describe("When called with only a shader and it references iTime", () => {
       beforeEach(() => {
-        render({fragmentShader: `
+        render(`
           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             fragColor = vec4(0.0, 0.0, sin(iTime), 1.0);
           }
-        `})
+        `)
       })
-      it("should render a black square", () => {
+      it("should be ok with it", () => {
         const pixel = getPixelColor(canvas, 0, 0)
         expect(pixel).to.deep.equal(new Uint8Array([0, 0, 0, 255]))
       })
     })
-  })
 })
 
 mocha.run()
