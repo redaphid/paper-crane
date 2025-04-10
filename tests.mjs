@@ -150,6 +150,24 @@ describe("PaperCrane", () => {
       })
 
     })
+    describe("When called with a shader and an initial image", () => {
+      beforeEach(() => {
+        const image = document.getElementById("initial-image")
+        render({fragmentShader: `
+          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+            vec2 uv = fragCoord.xy / iResolution.xy;
+              vec3 color = getInitialFrameColor(uv).rgb;
+              fragColor = vec4(color, 1.0);
+            }
+          `,
+          initialImage: image
+        })
+      })
+      it("should render the center of the image red", () => {
+        const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+        expect(red).to.be.greaterThan(blue)
+      })
+  })
 })
 
 mocha.run()

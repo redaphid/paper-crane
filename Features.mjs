@@ -70,13 +70,10 @@ const createStandardUniforms = ({
         iMouse: [touchX, touchY, touched ? 1.0 : 0.0, 0.0],
 
         // Channel uniforms - double-buffering scheme
-        // In ShaderToy:
-        // - iChannel0/2 often used for previous frame (feedback)
-        // - iChannel1/3 often used for input textures
-        iChannel0: prevFrameTexture, // Previous frame for feedback effects
-        iChannel1: initialTexture,   // Static/input texture
-        iChannel2: prevFrameTexture, // Secondary feedback channel
-        iChannel3: initialTexture,   // Secondary input texture
+        // iChannel0 is used for initialTexture (static/input texture)
+        // iChannel1 is used for prevFrameTexture (previous frame)
+        iChannel0: initialTexture,     // Static/input texture for getInitialFrameColor
+        iChannel1: prevFrameTexture,   // Previous frame for feedback effects
 
         // Additional ShaderToy uniforms
         iDate: [
@@ -90,7 +87,7 @@ const createStandardUniforms = ({
         // Aliases and alternatives
         time: timeInSeconds,
         frame: frameNumber,
-        random,
+        iRandom: random,
         resolution: [frameWidth, frameHeight]
     }
 }
@@ -114,6 +111,7 @@ const extractContextValues = defaultFeatures => {
     const prevFrameTexture = prevFrame.attachments[0]
     const frameWidth = frame.width
     const frameHeight = frame.height
+
     return {
         time,
         frameNumber,
@@ -141,9 +139,16 @@ export const wrap = (features = {}, defaultFeatures = {}) => {
     // Create standard ShaderToy uniforms
     const standardValues = createStandardUniforms(contextValues)
 
+    // Ensure texture channels are always available, even if not referenced in the shader
+    const textureChannels = {
+        iChannel0: standardValues.iChannel0,
+        iChannel1: standardValues.iChannel1
+    }
+
     // Merge with user features (user values take precedence)
     const mergedUniforms = {
         ...standardValues,
+        ...textureChannels, // Ensure texture channels are always included
         ...Object.fromEntries(
             Object.entries(features)
                 .filter(([, value]) => value !== undefined)

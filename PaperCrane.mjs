@@ -104,6 +104,7 @@ const getEmptyTexture = (gl) => {
 export const make = (deps) => {
     const canvas = makeSchema.parse(deps)
     const startTime = performance.now()
+
     const gl = canvas.getContext('webgl2', {
         antialias: false,
         powerPreference: 'high-performance',
@@ -137,10 +138,57 @@ export const make = (deps) => {
     let programInfo = null
     let renderTimes = []
     let lastResolutionRatio = 1
+    let textureCache = new Map()
 
     // Track the raw shader and wrapped compiled shader separately
     let lastShader = null
     let previousFeatures = {}
+
+    // Get or create a texture from cache or async loading
+    const getOrCreateTexture = (gl, src) => {
+        if (!src) return initialTexture
+
+        // Return from cache if already loaded
+        if (textureCache.has(src)) {
+            return textureCache.get(src)
+        }
+
+        // Start loading but return empty texture for now
+        getTexture(gl, src).then(texture => {
+            textureCache.set(src, texture)
+        }).catch(err => {
+            console.warn('Failed to load texture:', err)
+        })
+
+        return initialTexture
+    }
+
+    // Extract initialImage from features if provided
+    const getInitialTexture = (features) => {
+        const initialImage = features.initialImage
+
+        if (!initialImage) return initialTexture
+
+        if (initialImage instanceof HTMLImageElement) {
+            // For tests, directly use the image as texture source
+            if (!textureCache.has(initialImage)) {
+                // Create texture with flip-y to match expected orientation
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+                const texture = createTexture(gl, {
+                    src: initialImage,
+                    min: gl.NEAREST,
+                    mag: gl.NEAREST,
+                    wrap: gl.REPEAT
+                })
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
+                textureCache.set(initialImage, texture)
+                return texture
+            }
+            return textureCache.get(initialImage)
+        }
+
+        return initialTexture
+    }
 
     // Compile the shader and update programInfo
     const regenerateProgramInfo = (wrappedShader) => {
@@ -202,11 +250,14 @@ export const make = (deps) => {
         const frame = frameBuffers[frameNumber % 2]
         const prevFrame = frameBuffers[(frameNumber + 1) % 2]
 
+        // Get texture for the initial image
+        const currentInitialTexture = getInitialTexture(features)
+
         // Create a single dynamic context for both shader wrapping and rendering
         const dynamicContext = {
             prevFrame,
             frame,
-            initialTexture,
+            initialTexture: currentInitialTexture,
             time,
             frameNumber,
             random: Math.random(),

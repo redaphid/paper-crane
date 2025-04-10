@@ -44,12 +44,19 @@
 			flex-wrap: wrap;
 			flex: 1;
 		}
+
+		#initial-image {
+			width: 100px;
+			height: 100px;
+			object-fit: cover;
+		}
 	</style>
 </head>
 
 <body>
 	<div id="mocha"></div>
 	<div id="paper-cranes"></div>
+	<img id="initial-image" src="red-circle.png" />
 </body>
 <script src="./tests.mjs" type="module"></script>
 
