@@ -10,6 +10,7 @@ const getPixelColor = (canvas, x, y) => {
   gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
   return pixel
 }
+const timeout = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 describe("PaperCrane", () => {
     let render
     /** @type {HTMLCanvasElement} */
@@ -132,6 +133,22 @@ describe("PaperCrane", () => {
         const pixel = getPixelColor(canvas, 0, 0)
         expect(pixel).to.deep.equal(new Uint8Array([0, 0, 1, 255]))
       })
+
+      describe("When we wait 10ms and call it again", () => {
+        let changed
+        beforeEach(async () => {
+          await timeout(10)
+          changed = render()
+        })
+        it("should render a different color", () => {
+          const [red, green, blue, alpha] = getPixelColor(canvas, 0, 0)
+          expect(blue).to.be.greaterThan(1)
+        })
+        it("should not tell us that the shader changed", () => {
+          expect(changed).to.be.false
+        })
+      })
+
     })
 })
 
