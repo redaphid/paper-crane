@@ -211,8 +211,6 @@ export const make = (deps) => {
 
         // Create dynamic context
         const dynamicContext = {
-            prevFrame,
-            frame,
             initialTexture: currentInitialTexture,
             prevFrameTexture: frameNumber === 0 ? currentInitialTexture : prevFrame.attachments[0],
             time,
@@ -220,7 +218,9 @@ export const make = (deps) => {
             random: Math.random(),
             touchX: features?.touchX ?? 0,
             touchY: features?.touchY ?? 0,
-            touched: features?.touched ?? false
+            touched: features?.touched ?? false,
+            width: features?.width ?? gl.canvas.width,
+            height: features?.height ?? gl.canvas.height
         }
 
         // 2. Check if shader needs to be recompiled
@@ -280,6 +280,7 @@ export const make = (deps) => {
             lastResolutionRatio = newResolutionRatio
             renderTimes = []
         }
+
         return changedShader
     }
 

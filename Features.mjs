@@ -33,26 +33,12 @@ const resolveReferences = uniforms => {
     return result
 }
 
-// Standard ShaderToy uniform names for reference
-export const standardUniforms = [
-    'iTime',           // shader playback time (in seconds)
-    'iFrame',          // shader playback frame
-    'iResolution',     // viewport resolution (in pixels)
-    'iMouse',          // mouse pixel coords
-    'iChannel0',       // input channel 0
-    'iChannel1',       // input channel 1
-    'iChannel2',       // input channel 2
-    'iChannel3',       // input channel 3
-    'iDate',           // year, month, day, time in seconds
-    'iSampleRate'      // sound sample rate
-]
-
 // Create ShaderToy standard uniforms with values from context
 const createStandardUniforms = ({
     time,
     frameNumber,
-    frameWidth,
-    frameHeight,
+    width,
+    height,
     touchX,
     touchY,
     touched,
@@ -66,7 +52,7 @@ const createStandardUniforms = ({
         // ShaderToy primary uniforms
         iTime: timeInSeconds,
         iFrame: frameNumber,
-        iResolution: [frameWidth, frameHeight, 1.0],
+        iResolution: [width, height, 1.0],
         iMouse: [touchX, touchY, touched ? 1.0 : 0.0, 0.0],
 
         // Channel uniforms - double-buffering scheme
@@ -88,43 +74,10 @@ const createStandardUniforms = ({
         time: timeInSeconds,
         frame: frameNumber,
         iRandom: random,
-        resolution: [frameWidth, frameHeight]
+        resolution: [width, height]
     }
 }
 
-// Extract values needed for standard uniforms from context
-const extractContextValues = defaultFeatures => {
-    // These values must be provided by PaperCrane.mjs
-    const {
-        prevFrame,
-        frame,
-        initialTexture,
-        prevFrameTexture,
-        time,
-        frameNumber,
-        random,
-        touchX,
-        touchY,
-        touched
-    } = defaultFeatures
-
-    // Extract values from frame buffer objects
-    const frameWidth = frame.width
-    const frameHeight = frame.height
-
-    return {
-        time,
-        frameNumber,
-        frameWidth,
-        frameHeight,
-        touchX,
-        touchY,
-        touched,
-        prevFrameTexture,
-        initialTexture,
-        random
-    }
-}
 
 /**
  * Wraps features with ShaderToy uniforms and resolves references
@@ -134,21 +87,16 @@ const extractContextValues = defaultFeatures => {
  */
 export const wrap = (features = {}, defaultFeatures = {}) => {
     // Extract context values needed for standard uniforms
-    const contextValues = extractContextValues(defaultFeatures)
+    const contextValues = defaultFeatures
 
     // Create standard ShaderToy uniforms
     const standardValues = createStandardUniforms(contextValues)
 
     // Ensure texture channels are always available, even if not referenced in the shader
-    const textureChannels = {
-        iChannel0: standardValues.iChannel0,
-        iChannel1: standardValues.iChannel1
-    }
 
     // Merge with user features (user values take precedence)
     const mergedUniforms = {
         ...standardValues,
-        ...textureChannels, // Ensure texture channels are always included
         ...Object.fromEntries(
             Object.entries(features)
                 .filter(([, value]) => value !== undefined)
