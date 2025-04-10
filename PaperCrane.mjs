@@ -101,6 +101,35 @@ const getEmptyTexture = (gl) => {
     })
     return texture
 }
+
+// Helper function to copy the initial texture to the previous frame buffer
+const copyInitialTextureToPrevFrame = (gl, framebuffer, textureToCopy, bufferInfo, width, height) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+
+    const initProgram = createProgramInfo(gl, [
+        defaultVertexShader,
+        `#version 300 es
+        precision highp float;
+        uniform sampler2D u_texture;
+        out vec4 fragColor;
+        void main() {
+            vec2 uv = gl_FragCoord.xy / vec2(${width}.0, ${height}.0);
+            fragColor = texture(u_texture, uv);
+        }`
+    ]);
+
+    if (!initProgram || !initProgram.program) {
+        console.error("Failed to create program for initial texture copy.");
+        return;
+    }
+
+    gl.useProgram(initProgram.program);
+    setBuffersAndAttributes(gl, initProgram, bufferInfo);
+    setUniforms(initProgram, { u_texture: textureToCopy });
+    drawBufferInfo(gl, bufferInfo);
+    gl.deleteProgram(initProgram.program); // Clean up the temporary program
+}
+
 export const make = (deps) => {
     const canvas = makeSchema.parse(deps)
     const startTime = performance.now()
@@ -253,6 +282,24 @@ export const make = (deps) => {
         // Get texture for the initial image
         const currentInitialTexture = getInitialTexture(features)
 
+        // First frame: initialize prevFrame with white or initialImage texture
+        if (frameNumber === 0) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, prevFrame.framebuffer);
+            let initializedPrevFrame = false; // Flag to track initialization
+
+            // If we have a custom initial texture, copy it.
+            if (currentInitialTexture !== initialTexture) {
+                copyInitialTextureToPrevFrame(gl, prevFrame.framebuffer, currentInitialTexture, bufferInfo, prevFrame.width, prevFrame.height);
+                initializedPrevFrame = true;
+            }
+
+            // If the previous frame wasn't initialized with a texture, clear it to white.
+            if (!initializedPrevFrame) {
+                gl.clearColor(1.0, 1.0, 1.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+            }
+        }
+
         // Create a single dynamic context for both shader wrapping and rendering
         const dynamicContext = {
             prevFrame,
@@ -323,5 +370,24 @@ export const make = (deps) => {
         return changedShader
     }
 
+    // Add cleanup method to render function
+    render.cleanup = () => {
+        // get an image from the canvas
+        const image = new Image()
+        image.src = gl.canvas.toDataURL()
+        textureCache.clear()
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
+        gl.canvas.width = 1;
+        gl.canvas.height = 1;
+        frameBuffers.forEach(fb => {
+            gl.deleteFramebuffer(fb.framebuffer);
+            gl.deleteTexture(fb.attachments[0]);
+        });
+        gl.deleteBuffer(bufferInfo.attribs.position.buffer);
+        gl.deleteProgram(programInfo?.program);
+        gl.deleteTexture(initialTexture);
+        return image;
+
+    }
     return render
 }

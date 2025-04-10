@@ -20,6 +20,12 @@ describe("PaperCrane", () => {
       cranesContainer.appendChild(canvas)
       render = make(canvas)
     })
+    afterEach(() => {
+      const image = render.cleanup()
+      // replace the canvas with the image
+      cranesContainer.removeChild(canvas)
+      cranesContainer.appendChild(image)
+    })
     it("should exist", () => {
       expect(render).to.exist
     })
@@ -167,6 +173,27 @@ describe("PaperCrane", () => {
         const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
         expect(red).to.be.greaterThan(blue)
       })
+  })
+  describe("When a shader uses getLastFrameColor", () => {
+    beforeEach(() => {
+      render({fragmentShader: `
+        void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+          vec2 uv = fragCoord.xy / iResolution.xy;
+          vec3 color = getLastFrameColor(uv).rgb;
+          if(color.r < 0.5) color.r = color.r += 0.1;
+          fragColor = vec4(color, 1.0);
+        }
+      `})
+    })
+    it("should render the center of the image red", () => {
+      const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+      expect(red).to.be.greaterThan(0)
+    })
+    it("should render the edges of the image white", () => {
+      const [red, green, blue] = getPixelColor(canvas, 0, 0)
+     expect(red).to.equal(green)
+     expect(green).to.equal(blue)
+    })
   })
 })
 
