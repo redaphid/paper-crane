@@ -179,17 +179,18 @@ describe("PaperCrane", () => {
       })
   })
   describe("When a shader uses getLastFrameColor", () => {
+    let lastGreen
     beforeEach(() => {
-      render = make({ canvas, initialImage: document.getElementById("initial-image") });
-
-      render({fragmentShader: `
+      render = make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
         void mainImage(out vec4 fragColor, in vec2 fragCoord) {
           vec2 uv = fragCoord.xy / iResolution.xy;
           vec3 color = getLastFrameColor(uv).rgb;
-            color.g = clamp(color.g + 0.1, 0.0, 1.0);
-            fragColor = vec4(color, 1.0);
-          }
-        `})
+          color.g = clamp(color.g + 0.1, 0.0, 1.0);
+          fragColor = vec4(color, 1.0);
+        }
+      `});
+      render()
+      lastGreen = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)[1]
       })
       it("should render the center of the image red", () => {
         const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
@@ -201,6 +202,20 @@ describe("PaperCrane", () => {
         const [red, green, blue] = getPixelColor(canvas, 0, 0)
        expect(red).to.be.closeTo(green, 20)
        expect(green).to.be.closeTo(blue, 20)
+      })
+      describe("When rendered again after 10ms", () => {
+        let changed
+        beforeEach(async () => {
+          await timeout(10)
+          changed = render()
+        })
+        it("should render a different color", () => {
+          const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+          expect(green).to.be.greaterThan(lastGreen)
+        })
+        it("should not tell us that the shader changed", () => {
+          expect(changed).to.be.false
+        })
       })
     })
 })
