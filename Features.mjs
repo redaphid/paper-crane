@@ -71,9 +71,9 @@ const createStandardUniforms = ({
 
         // Channel uniforms - double-buffering scheme
         // iChannel0 is used for initialTexture (static/input texture)
-        // iChannel1 is used for prevFrameTexture (previous frame)
+        // iChannel1 is used for prevFrameTexture (previous frame, or initialTexture on frame 0)
         iChannel0: initialTexture,     // Static/input texture for getInitialFrameColor
-        iChannel1: prevFrameTexture,   // Previous frame for feedback effects
+        iChannel1: prevFrameTexture,   // Previous frame texture provided by dynamic context
 
         // Additional ShaderToy uniforms
         iDate: [
@@ -99,6 +99,7 @@ const extractContextValues = defaultFeatures => {
         prevFrame,
         frame,
         initialTexture,
+        prevFrameTexture,
         time,
         frameNumber,
         random,
@@ -108,7 +109,6 @@ const extractContextValues = defaultFeatures => {
     } = defaultFeatures
 
     // Extract values from frame buffer objects
-    const prevFrameTexture = prevFrame.attachments[0]
     const frameWidth = frame.width
     const frameHeight = frame.height
 

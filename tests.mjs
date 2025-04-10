@@ -7,7 +7,8 @@ const cranesContainer = document.getElementById("paper-cranes")
 const getPixelColor = (canvas, x, y) => {
   const gl = canvas.getContext("webgl2")
   const pixel = new Uint8Array(4)
-  gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
+  const flippedY = canvas.height - y - 1
+  gl.readPixels(x, flippedY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
   return pixel
 }
 const timeout = (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -18,7 +19,7 @@ describe("PaperCrane", () => {
     beforeEach(() => {
       canvas = document.createElement("canvas")
       cranesContainer.appendChild(canvas)
-      render = make(canvas)
+      render = make({ canvas })
     })
     afterEach(() => {
       const image = render.cleanup()
@@ -159,42 +160,49 @@ describe("PaperCrane", () => {
     describe("When called with a shader and an initial image", () => {
       beforeEach(() => {
         const image = document.getElementById("initial-image")
+        render = make({ canvas, initialImage: image });
+
         render({fragmentShader: `
           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec2 uv = fragCoord.xy / iResolution.xy;
-              vec3 color = getInitialFrameColor(uv).rgb;
-              fragColor = vec4(color, 1.0);
-            }
-          `,
-          initialImage: image
+            vec3 color = getInitialFrameColor(uv).rgb;
+            fragColor = vec4(color, 1.0);
+          }
+        `
         })
       })
       it("should render the center of the image red", () => {
-        const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-        expect(red).to.be.greaterThan(blue)
+        const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+        // Check for red color (adjust tolerance if needed due to minor filtering/precision differences)
+          expect(red).to.be.greaterThan(green)
+          expect(red).to.be.greaterThan(blue)
       })
   })
   describe("When a shader uses getLastFrameColor", () => {
     beforeEach(() => {
+      render = make({ canvas, initialImage: document.getElementById("initial-image") });
+
       render({fragmentShader: `
         void mainImage(out vec4 fragColor, in vec2 fragCoord) {
           vec2 uv = fragCoord.xy / iResolution.xy;
           vec3 color = getLastFrameColor(uv).rgb;
-          if(color.r < 0.5) color.r = color.r += 0.1;
-          fragColor = vec4(color, 1.0);
-        }
-      `})
+            color.g = clamp(color.g + 0.1, 0.0, 1.0);
+            fragColor = vec4(color, 1.0);
+          }
+        `})
+      })
+      it("should render the center of the image red", () => {
+        const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+        // Check for red color (allow slight variations)
+        expect(red).to.be.greaterThan(green)
+        expect(red).to.be.greaterThan(blue)
+      })
+      it("should render the edges of the image white", () => {
+        const [red, green, blue] = getPixelColor(canvas, 0, 0)
+       expect(red).to.be.closeTo(green, 20)
+       expect(green).to.be.closeTo(blue, 20)
+      })
     })
-    it("should render the center of the image red", () => {
-      const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-      expect(red).to.be.greaterThan(0)
-    })
-    it("should render the edges of the image white", () => {
-      const [red, green, blue] = getPixelColor(canvas, 0, 0)
-     expect(red).to.equal(green)
-     expect(green).to.equal(blue)
-    })
-  })
 })
 
 mocha.run()

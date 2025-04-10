@@ -11,9 +11,6 @@ import {
 
 import { wrap as wrapShader } from './Shader.mjs'
 import { wrap as wrapFeatures } from './Features.mjs'
-
-import { z } from 'zod'
-const makeSchema = z.instanceof(HTMLCanvasElement)
 // Simple full-screen quad
 const positions = [
     -1, -1, 0,
@@ -23,23 +20,6 @@ const positions = [
     1, -1, 0,
     1, 1, 0,
 ]
-
-const getTexture = async (gl, url) => {
-    return new Promise((resolve) => {
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-        const texture = createTexture(gl, {
-            src: url,
-            crossOrigin: 'anonymous',
-            min: gl.NEAREST,
-            mag: gl.NEAREST,
-            wrap: gl.REPEAT
-        }, () => {
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
-            resolve(texture)
-        })
-    })
-}
-
 const handleShaderError = (gl, wrappedFragmentShader) => {
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fragmentShader, wrappedFragmentShader);
@@ -103,35 +83,15 @@ const getEmptyTexture = (gl) => {
 }
 
 // Helper function to copy the initial texture to the previous frame buffer
+// REMOVED THIS FUNCTION
+/*
 const copyInitialTextureToPrevFrame = (gl, framebuffer, textureToCopy, bufferInfo, width, height) => {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-
-    const initProgram = createProgramInfo(gl, [
-        defaultVertexShader,
-        `#version 300 es
-        precision highp float;
-        uniform sampler2D u_texture;
-        out vec4 fragColor;
-        void main() {
-            vec2 uv = gl_FragCoord.xy / vec2(${width}.0, ${height}.0);
-            fragColor = texture(u_texture, uv);
-        }`
-    ]);
-
-    if (!initProgram || !initProgram.program) {
-        console.error("Failed to create program for initial texture copy.");
-        return;
-    }
-
-    gl.useProgram(initProgram.program);
-    setBuffersAndAttributes(gl, initProgram, bufferInfo);
-    setUniforms(initProgram, { u_texture: textureToCopy });
-    drawBufferInfo(gl, bufferInfo);
-    gl.deleteProgram(initProgram.program); // Clean up the temporary program
+    // ... implementation removed ...
 }
+*/
 
 export const make = (deps) => {
-    const canvas = makeSchema.parse(deps)
+    const {canvas, initialImage} = deps
     const startTime = performance.now()
 
     const gl = canvas.getContext('webgl2', {
@@ -173,30 +133,8 @@ export const make = (deps) => {
     let lastShader = null
     let previousFeatures = {}
 
-    // Get or create a texture from cache or async loading
-    const getOrCreateTexture = (gl, src) => {
-        if (!src) return initialTexture
-
-        // Return from cache if already loaded
-        if (textureCache.has(src)) {
-            return textureCache.get(src)
-        }
-
-        // Start loading but return empty texture for now
-        getTexture(gl, src).then(texture => {
-            textureCache.set(src, texture)
-        }).catch(err => {
-            console.warn('Failed to load texture:', err)
-        })
-
-        return initialTexture
-    }
-
-    // Extract initialImage from features if provided
-    const getInitialTexture = (features) => {
-        const initialImage = features.initialImage
-
-        if (!initialImage) return initialTexture
+    const getInitialTexture = () => {
+        if (!initialImage) return initialTexture;
 
         if (initialImage instanceof HTMLImageElement) {
             // For tests, directly use the image as texture source
@@ -266,7 +204,7 @@ export const make = (deps) => {
     const render = (props) => {
         let changedShader = false
 
-        // 1. Parse props to get raw shader and initial features
+        // 1. Parse props to get raw shader and features
         const {rawShader, features} = getShaderAndFeatures(props)
 
         // Get current time and calculate frame time
@@ -280,43 +218,28 @@ export const make = (deps) => {
         const prevFrame = frameBuffers[(frameNumber + 1) % 2]
 
         // Get texture for the initial image
-        const currentInitialTexture = getInitialTexture(features)
+        const currentInitialTexture = getInitialTexture()
 
-        // First frame: initialize prevFrame with white or initialImage texture
-        if (frameNumber === 0) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, prevFrame.framebuffer);
-            let initializedPrevFrame = false; // Flag to track initialization
-
-            // If we have a custom initial texture, copy it.
-            if (currentInitialTexture !== initialTexture) {
-                copyInitialTextureToPrevFrame(gl, prevFrame.framebuffer, currentInitialTexture, bufferInfo, prevFrame.width, prevFrame.height);
-                initializedPrevFrame = true;
-            }
-
-            // If the previous frame wasn't initialized with a texture, clear it to white.
-            if (!initializedPrevFrame) {
-                gl.clearColor(1.0, 1.0, 1.0, 1.0);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-            }
-        }
-
-        // Create a single dynamic context for both shader wrapping and rendering
+        // Create dynamic context
         const dynamicContext = {
             prevFrame,
             frame,
             initialTexture: currentInitialTexture,
+            prevFrameTexture: frameNumber === 0 ? currentInitialTexture : prevFrame.attachments[0],
             time,
             frameNumber,
             random: Math.random(),
-            touchX: features.touchX ?? 0,
-            touchY: features.touchY ?? 0,
-            touched: features.touched ?? false
+            touchX: features?.touchX ?? 0,
+            touchY: features?.touchY ?? 0,
+            touched: features?.touched ?? false
         }
 
         // 2. Check if shader needs to be recompiled
         if (rawShader !== lastShader) {
-            // Get complete features with ShaderToy uniforms for shader wrapping
-            const wrappingFeatures = wrapFeatures(features, dynamicContext)
+            // Pass features without initialImage to wrapFeatures
+            const featuresForShader = { ...features };
+            delete featuresForShader.initialImage;
+            const wrappingFeatures = wrapFeatures(featuresForShader, dynamicContext)
 
             // Wrap the raw shader with boilerplate and uniform declarations
             const wrappedShader = wrapShader(rawShader, wrappingFeatures)
@@ -337,12 +260,15 @@ export const make = (deps) => {
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, frame.framebuffer)
 
         // 4. Process features with dynamic context to get uniforms for rendering
-        const uniforms = filterUniforms(wrapFeatures(features, dynamicContext))
-
+        // Pass features without initialImage to wrapFeatures
+        const featuresForUniforms = { ...features };
+        delete featuresForUniforms.initialImage;
+        const uniforms = filterUniforms(wrapFeatures(featuresForUniforms, dynamicContext))
 
         // 6. Set uniforms and render
         setBuffersAndAttributes(gl, programInfo, bufferInfo)
         setUniforms(programInfo, uniforms)
+
         drawBufferInfo(gl, bufferInfo)
 
         // 7. Copy rendered result to canvas
@@ -387,7 +313,6 @@ export const make = (deps) => {
         gl.deleteProgram(programInfo?.program);
         gl.deleteTexture(initialTexture);
         return image;
-
     }
     return render
 }
