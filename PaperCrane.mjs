@@ -9,7 +9,7 @@ import {
     drawBufferInfo,
 } from 'twgl'
 
-import { wrap as wrapShader } from './shader-wrapper.mjs'
+import { wrap as wrapShader } from './Shader.mjs'
 import { wrap as wrapFeatures } from './Features.mjs'
 
 import { z } from 'zod'
@@ -55,12 +55,14 @@ const handleShaderError = (gl, wrappedFragmentShader) => {
 
     // Find the line with our marker
     const wrappedLines = wrappedFragmentShader.split('\n');
-    const headerLines = wrappedLines.findIndex(line => line.includes('31CF3F64-9176-4686-9E52-E3CFEC21FE72'));
+    const markerLineIndex = wrappedLines.findIndex(line => line.includes('31CF3F64-9176-4686-9E52-E3CFEC21FE72'));
+    const headerLineCount = markerLineIndex !== -1 ? markerLineIndex + 1 : 0;
 
     let message = `there was something wrong with ur shader`
     let lineNumber = 0
-    for (const line of error.matchAll(/ERROR: \d+:(\d+):/g)) {
-        lineNumber = parseInt(line[1]) - headerLines - 1;
+    const errorMatch = error.match(/ERROR: \d+:(\d+):/);
+    if (errorMatch) {
+        lineNumber = parseInt(errorMatch[1]) - headerLineCount;
         message = error.split(':').slice(3).join(':').trim();
     }
 
@@ -68,16 +70,22 @@ const handleShaderError = (gl, wrappedFragmentShader) => {
 }
 
 const calculateResolutionRatio = (frameTime, renderTimes, lastResolutionRatio) => {
-    renderTimes.push(frameTime)
-    if (renderTimes.length > 20) renderTimes.shift()
-    if(renderTimes.length < 20) return lastResolutionRatio
+    // Add current frame time and maintain maximum 20 samples
+    const newRenderTimes = [...renderTimes.slice(-19), frameTime]
 
-    // Calculate average frame time over last 20 frames
-    const avgFrameTime = renderTimes.reduce((a, b) => a + b) / renderTimes.length
+    // Need at least 20 samples to make adjustment
+    if (newRenderTimes.length < 20)  return [lastResolutionRatio, newRenderTimes]
 
-    if (avgFrameTime > 50) return Math.max(0.5, lastResolutionRatio - 0.5)
-    if (avgFrameTime < 20 && lastResolutionRatio < 1) return Math.min(1, lastResolutionRatio + 0.1)
-    return lastResolutionRatio
+    // Calculate average frame time
+    const avgFrameTime = newRenderTimes.reduce((sum, time) => sum + time, 0) / newRenderTimes.length
+
+    // Adjust resolution based on performance
+    if (avgFrameTime > 50) return [Math.max(0.5, lastResolutionRatio - 0.5), []]
+
+    if (avgFrameTime < 20 && lastResolutionRatio < 1) return [Math.min(1, lastResolutionRatio + 0.1), []]
+
+
+    return [lastResolutionRatio, newRenderTimes]
 }
 
 // Default vertex shader for full-screen quad
@@ -123,115 +131,146 @@ export const make = (deps) => {
 
     const bufferInfo = createBufferInfoFromArrays(gl, { position: positions })
 
+    // State variables
     let frameNumber = 0
     let lastRender = performance.now()
-    let programInfo
-    let lastFragmentShader
+    let programInfo = null
     let renderTimes = []
     let lastResolutionRatio = 1
+
+    // Track the raw shader and wrapped compiled shader separately
+    let lastShader = null
     let previousFeatures = {}
 
-    const regenerateProgramInfo = (fragmentShader) => {
-        programInfo = createProgramInfo(gl, [defaultVertexShader, fragmentShader])
+    // Compile the shader and update programInfo
+    const regenerateProgramInfo = (wrappedShader) => {
+        programInfo = createProgramInfo(gl, [defaultVertexShader, wrappedShader])
         if (!programInfo?.program) {
-            handleShaderError(gl, fragmentShader);
+            handleShaderError(gl, wrappedShader);
             programInfo = null;
+            return false;
         }
         gl.useProgram(programInfo.program)
-        return programInfo
+        return true;
     }
 
+    // Extract shader and features from props
     const getShaderAndFeatures = (props) => {
         // if props is undefined, then use the last fragment shader and features
-        if(props === undefined) return {fragmentShader: lastFragmentShader, features: {...previousFeatures}}
-        // if it is not an object at this point, it is an error
-        if(typeof props === 'string') return {fragmentShader: wrapShader(props), features: {...previousFeatures}}
+        if(props === undefined) return {rawShader: lastShader, features: {...previousFeatures}}
+
+        // If props is a string, it's a shader
+        if(typeof props === 'string') return {rawShader: props, features: {...previousFeatures}}
+
+        // Must be an object at this point
         if(typeof props !== 'object') throw new Error('props must be an object or a string')
-        // if we don't have the features key, it is the features
-        let {fragmentShader, features} = props
-        features ??= props
-        const newFeatures = wrapFeatures(updateFeatures({...previousFeatures, ...features}))
-        const newFragmentShader = fragmentShader ? wrapShader(fragmentShader, newFeatures) : lastFragmentShader
-        return {fragmentShader: newFragmentShader, features: newFeatures}
+
+        // Extract shader and features from object
+        const {fragmentShader, features = props} = props
+        return {
+            rawShader: fragmentShader ?? lastShader,
+            features: {...previousFeatures, ...features}
+        }
     }
+
+    // Filter uniforms to remove invalid values
+    const filterUniforms = uniforms =>
+        Object.fromEntries(
+            Object.entries(uniforms).filter(([, value]) =>
+                // Accept finite numbers
+                (typeof value === 'number' && Number.isFinite(value)) ||
+                // Accept arrays of finite numbers (for vec uniforms like iResolution)
+                (Array.isArray(value) && value.every(v => typeof v === 'number' && Number.isFinite(v))) ||
+                // Accept WebGL textures (for sampler uniforms like iChannel0)
+                (value && typeof value === 'object')
+            )
+        )
 
     const render = (props) => {
         let changedShader = false
-        // if there is no features key, then the whole object is the features
-        const {fragmentShader, features} = getShaderAndFeatures(props)
-        if(!fragmentShader) throw new Error('fragmentShader is required')
-        if (fragmentShader !== lastFragmentShader) {
-            changedShader = true
-            previousFeatures = features
-            regenerateProgramInfo(fragmentShader)
-        }
-        lastFragmentShader = fragmentShader
 
-        const {time} = features
-        const frameTime = time - lastRender
+        // 1. Parse props to get raw shader and initial features
+        const {rawShader, features} = getShaderAndFeatures(props)
 
-        const  resolutionRatio = calculateResolutionRatio(frameTime, renderTimes, lastResolutionRatio)
+        // Get current time and calculate frame time
+        const now = performance.now()
+        const time = now - startTime
+        const frameTime = now - lastRender
+        lastRender = now
 
-        if (resolutionRatio !== lastResolutionRatio) {
-            console.log(`Adjusting resolution ratio to ${resolutionRatio.toFixed(2)}`)
-            resizeCanvasToDisplaySize(gl.canvas, resolutionRatio)
-            lastResolutionRatio = resolutionRatio
-            renderTimes = []
-        }
-
-        lastRender = time
+        // Get current and previous frame buffers
         const frame = frameBuffers[frameNumber % 2]
         const prevFrame = frameBuffers[(frameNumber + 1) % 2]
+
+        // Create a single dynamic context for both shader wrapping and rendering
+        const dynamicContext = {
+            prevFrame,
+            frame,
+            initialTexture,
+            time,
+            frameNumber,
+            random: Math.random(),
+            touchX: features.touchX ?? 0,
+            touchY: features.touchY ?? 0,
+            touched: features.touched ?? false
+        }
+
+        // 2. Check if shader needs to be recompiled
+        if (rawShader !== lastShader) {
+            // Get complete features with ShaderToy uniforms for shader wrapping
+            const wrappingFeatures = wrapFeatures(features, dynamicContext)
+
+            // Wrap the raw shader with boilerplate and uniform declarations
+            const wrappedShader = wrapShader(rawShader, wrappingFeatures)
+
+            // Attempt to compile the wrapped shader
+            if (regenerateProgramInfo(wrappedShader)) {
+                // Compilation successful, update state
+                lastShader = rawShader
+                previousFeatures = features
+                changedShader = true
+            }
+        }
+
+        // Skip render if we don't have a valid program
+        if (!programInfo?.program) return false
+
+        // 3. Set up render target
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, frame.framebuffer)
 
-        let uniforms = {
-            iTime: time,
-            iFrame: frameNumber,
-            time,
-            prevFrame: frameNumber === 0 ? initialTexture : prevFrame.attachments[0],
-            initialFrame: initialTexture,
-            resolution: [frame.width, frame.height],
-            frame: frameNumber,
-            iRandom: Math.random(),
-            iResolution: [frame.width, frame.height, 0],
-            iMouse: [features.touchX, features.touchY, features.touched ? 1: 0, 0],
-            iChannel0: initialTexture,
-            iChannel1: prevFrame.attachments[0],
-            iChannel2: initialTexture,
-            iChannel3: prevFrame.attachments[0],
-            ...features,
-        }
-        // filter out null, undefined, and NaN values
-        uniforms = Object.fromEntries(
-            Object.entries(uniforms).filter(([, value]) => Number.isFinite(value))
-        )
-        // resolve uniform references;
-        uniforms = resolveReferences(uniforms)
+        // 4. Process features with dynamic context to get uniforms for rendering
+        const uniforms = filterUniforms(wrapFeatures(features, dynamicContext))
 
+
+        // 6. Set uniforms and render
         setBuffersAndAttributes(gl, programInfo, bufferInfo)
         setUniforms(programInfo, uniforms)
         drawBufferInfo(gl, bufferInfo)
 
+        // 7. Copy rendered result to canvas
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, frame.framebuffer)
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
-        gl.blitFramebuffer(0, 0, frame.width, frame.height, 0, 0, gl.canvas.width, gl.canvas.height, gl.COLOR_BUFFER_BIT, gl.NEAREST)
+        gl.blitFramebuffer(
+            0, 0, frame.width, frame.height,
+            0, 0, gl.canvas.width, gl.canvas.height,
+            gl.COLOR_BUFFER_BIT, gl.NEAREST
+        )
+
+        // 8. Update frame counter
         frameNumber++
+
+        // 9. Handle performance-based resolution adjustment
+        const [newResolutionRatio, newRenderTimes] = calculateResolutionRatio(frameTime, renderTimes, lastResolutionRatio)
+        renderTimes = newRenderTimes
+        // Apply resolution change if needed
+        if (newResolutionRatio !== lastResolutionRatio) {
+            console.log(`Adjusting resolution ratio to ${newResolutionRatio.toFixed(2)}`)
+            resizeCanvasToDisplaySize(gl.canvas, newResolutionRatio)
+            lastResolutionRatio = newResolutionRatio
+            renderTimes = []
+        }
         return changedShader
     }
 
     return render
-}
-
-const resolveReferences = (uniforms) => {
-    uniforms = { ...uniforms }
-    // resolve references to other uniforms
-    // if the value of a uniform is a string, find the value of that uniform and replace the string with the value
-    for (const [key, value] of Object.entries(uniforms)) {
-        if(typeof value !== 'string') continue
-
-        const resolvedValue = uniforms[value]
-        if(resolvedValue === undefined) continue
-        uniforms[key] = resolvedValue
-    }
-    return uniforms
 }

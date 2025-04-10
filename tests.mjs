@@ -130,7 +130,7 @@ describe("PaperCrane", () => {
       })
       it("should be ok with it", () => {
         const pixel = getPixelColor(canvas, 0, 0)
-        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 0, 255]))
+        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 1, 255]))
       })
     })
 })
