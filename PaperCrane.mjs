@@ -81,15 +81,6 @@ const getEmptyTexture = (gl) => {
     })
     return texture
 }
-
-// Helper function to copy the initial texture to the previous frame buffer
-// REMOVED THIS FUNCTION
-/*
-const copyInitialTextureToPrevFrame = (gl, framebuffer, textureToCopy, bufferInfo, width, height) => {
-    // ... implementation removed ...
-}
-*/
-
 export const make = (deps) => {
     const {canvas, initialImage} = deps
     const startTime = performance.now()
@@ -127,7 +118,7 @@ export const make = (deps) => {
     let programInfo = null
     let renderTimes = []
     let lastResolutionRatio = 1
-    let textureCache = new Map()
+
 
     // Track the raw shader and wrapped compiled shader separately
     let lastShader = null
@@ -138,7 +129,7 @@ export const make = (deps) => {
 
         if (initialImage instanceof HTMLImageElement) {
             // For tests, directly use the image as texture source
-            if (!textureCache.has(initialImage)) {
+
                 // Create texture with flip-y to match expected orientation
                 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
                 const texture = createTexture(gl, {
@@ -148,10 +139,8 @@ export const make = (deps) => {
                     wrap: gl.REPEAT
                 })
                 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
-                textureCache.set(initialImage, texture)
                 return texture
-            }
-            return textureCache.get(initialImage)
+
         }
 
         return initialTexture
@@ -238,7 +227,6 @@ export const make = (deps) => {
         if (rawShader !== lastShader) {
             // Pass features without initialImage to wrapFeatures
             const featuresForShader = { ...features };
-            delete featuresForShader.initialImage;
             const wrappingFeatures = wrapFeatures(featuresForShader, dynamicContext)
 
             // Wrap the raw shader with boilerplate and uniform declarations
@@ -262,7 +250,6 @@ export const make = (deps) => {
         // 4. Process features with dynamic context to get uniforms for rendering
         // Pass features without initialImage to wrapFeatures
         const featuresForUniforms = { ...features };
-        delete featuresForUniforms.initialImage;
         const uniforms = filterUniforms(wrapFeatures(featuresForUniforms, dynamicContext))
 
         // 6. Set uniforms and render
@@ -301,7 +288,6 @@ export const make = (deps) => {
         // get an image from the canvas
         const image = new Image()
         image.src = gl.canvas.toDataURL()
-        textureCache.clear()
         gl.getExtension('WEBGL_lose_context')?.loseContext();
         gl.canvas.width = 1;
         gl.canvas.height = 1;
