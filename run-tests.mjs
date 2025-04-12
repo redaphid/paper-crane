@@ -1,11 +1,5 @@
 import { chromium } from 'playwright';
 
-// ANSI Color Codes
-const green = '\x1b[32m';
-const red = '\x1b[31m';
-const grey = '\x1b[90m';
-const reset = '\x1b[0m';
-
 const browser = await chromium.launch();
 const page = await browser.newPage();
 
