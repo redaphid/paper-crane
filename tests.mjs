@@ -188,18 +188,18 @@ describe("PaperCrane", () => {
         void mainImage(out vec4 fragColor, in vec2 fragCoord) {
           vec2 uv = fragCoord.xy / iResolution.xy;
           vec3 color = getLastFrameColor(uv).rgb;
-          color.g = clamp(color.g + 0.1, 0.0, 1.0);
-          fragColor = vec4(color, 1.0);
+          vec3 inverted = vec3(1.0 - color.r, 1.0 - color.g, 1.0 - color.b);
+          fragColor = vec4(inverted, 1.0);
         }
       `});
       render()
       lastGreen = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)[1]
       })
-      it("should render the center of the image red", () => {
+      it("should render the center of the image green", () => {
         const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
         // Check for red color (allow slight variations)
-        expect(red).to.be.greaterThan(green)
-        expect(red).to.be.greaterThan(blue)
+        expect(green).to.be.greaterThan(red)
+        expect(green).to.be.greaterThan(blue)
       })
       it("should render the edges of the image white", () => {
         const [red, green, blue] = getPixelColor(canvas, 0, 0)
