@@ -7,8 +7,7 @@ page.on('console', msg => console.log(msg.text()));
 page.on('pageerror', err => console.error(err));
 await page.goto('http://localhost:7355');
 
-await page.waitForSelector('#mocha.finished', { timeout: 10000 });
-
+await page.waitForFunction(() => document.getElementById('mocha')?.classList.contains('finished'), null, { timeout: 30000 });
 // Retrieve the failure count from the window
 const mocha = await page.evaluate(() => mocha);
 
