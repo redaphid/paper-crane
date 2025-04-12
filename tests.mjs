@@ -1,9 +1,11 @@
 import { expect,} from "chai"
 import {make} from './PaperCrane.mjs'
 
-console.log('running tests')
 mocha.checkLeaks();
 mocha.setup("bdd")
+const reporter = new URLSearchParams(window.location.search).get('reporter')
+if(reporter) mocha.reporter(reporter)
+
 const cranesContainer = document.getElementById("paper-cranes")
 const getPixelColor = (canvas, x, y) => {
   const gl = canvas.getContext("webgl2")
@@ -221,6 +223,4 @@ describe("PaperCrane", () => {
     })
 })
 
-const runner = mocha.run(() => {
-  document.getElementById("mocha").classList.add("finished")
-});
+mocha.run(()=>window.testsFinished = true)
