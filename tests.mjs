@@ -1,8 +1,9 @@
 import { expect,} from "chai"
 import {make} from './PaperCrane.mjs'
 
-mocha.setup("bdd")
+console.log('running tests')
 mocha.checkLeaks();
+mocha.setup("bdd")
 const cranesContainer = document.getElementById("paper-cranes")
 const getPixelColor = (canvas, x, y) => {
   const gl = canvas.getContext("webgl2")
@@ -220,4 +221,6 @@ describe("PaperCrane", () => {
     })
 })
 
-mocha.run()
+const runner = mocha.run(() => {
+  document.getElementById("mocha").classList.add("finished")
+});
