@@ -186,7 +186,6 @@ describe("PaperCrane", () => {
       })
     })
     describe("When a shader uses getLastFrameColor, and inverts whatever color was in the last frame", () => {
-      let lastGreen
       beforeEach(async () => {
         render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
@@ -197,7 +196,6 @@ describe("PaperCrane", () => {
           }
         `});
         render()
-        lastGreen = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)[1]
         })
         it("should render the center of the image green", () => {
           const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
@@ -212,6 +210,17 @@ describe("PaperCrane", () => {
           expect(red).to.equal(0)
           expect(green).to.equal(0)
           expect(blue).to.equal(0)
+        })
+        describe("When render is called again", () => {
+          beforeEach(() => {
+            render()
+          })
+          it("should render the center of the image red", () => {
+            const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+            expect(red).to.equal(255)
+            expect(green).to.equal(0)
+            expect(blue).to.equal(0)
+          })
         })
       })
     })

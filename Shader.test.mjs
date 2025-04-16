@@ -1,3 +1,4 @@
+import { expect,} from "chai"
 import wrap from './Shader.mjs'
 describe("Shader wrapping functionality", () => {
   describe("when wrapping a shader with existing version and precision", () => {

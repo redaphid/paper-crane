@@ -135,10 +135,10 @@ const addBuiltins = shader => {
 #define PAPER_CRANES 1
 
 vec4 getLastFrameColor(vec2 uv){
-    return texture(iChannel1, uv);
+    return texture(prevFrame, uv);
 }
 vec4 getInitialFrameColor(vec2 uv){
-    return texture(iChannel0, uv);
+    return texture(initialFrame, uv);
 }
 
 float random(vec2 st, float seed){

@@ -193,27 +193,26 @@ export const make = async (deps) => { // Removed async as it's not used
         // 1. Parse props
         const { rawShader, features } = getShaderAndFeaturesFromProps(props, lastShader, previousFeatures);
 
-        const prevFrame = frameBuffers[(frameNumber + 1) % 2];
-        const prevFrameTexture = frameNumber === 0 ? initialTexture : prevFrame.attachments[0];
+        const [currentFrame, previousFrame] = frameBuffers
+        const prevFrameTexture = frameNumber === 0 ? initialTexture : previousFrame.attachments[0];
 
         const filteredFeatures = Object.fromEntries(
             Object.entries(features).filter(([key, value]) => isUniform(value))
         )
         // 3. Create dynamic context for uniforms
         const uniforms = {
-            initialTexture: initialTexture,
-            prevFrameTexture: prevFrameTexture,
+            initialFrame: initialTexture, // For getInitialFrameColor
+            prevFrame: prevFrameTexture,    // For getLastFrameColor
+            iResolution: [frameBuffers[0].width, frameBuffers[0].height, 1],
+            iTime: time,
+            iFrame: frameNumber,
             time,
             frameNumber,
-
             width: frameBuffers[0].width,
             height: frameBuffers[0].height,
-
             touchX: features.touchX ?? 0,
             touchY: features.touchY ?? 0,
             touched: features.touched ?? false,
-
-            // Include all features as uniforms directly
             ...Object.entries(features).reduce((acc, [key, value]) => {
                 if (isUniform(value)) {
                     acc[key] = value;
@@ -222,9 +221,7 @@ export const make = async (deps) => { // Removed async as it's not used
             }, {})
         };
         const wrappedUniforms = wrapFeatures(uniforms);
-        console.log({features, uniforms, wrappedUniforms, rawShader})
         const wrappedShader = wrapShader(rawShader, wrappedUniforms);
-        console.log({wrappedShader})
         // 4. Check if shader needs recompile
         if (rawShader !== lastShader || !programInfo) {
             programInfo = createProgramInfo(gl, [defaultVertexShader, wrappedShader]);
@@ -232,8 +229,6 @@ export const make = async (deps) => { // Removed async as it's not used
         }
         // Skip render if program is invalid
         if (!programInfo?.program) return false;
-        // 6. Execute Render Pass
-        const currentFrame = frameBuffers[frameNumber % 2];
         gl.bindFramebuffer(gl.FRAMEBUFFER, currentFrame.framebuffer);
         setBuffersAndAttributes(gl, programInfo, bufferInfo);
         setUniforms(programInfo, wrappedUniforms);
@@ -244,7 +239,8 @@ export const make = async (deps) => { // Removed async as it's not used
 
         // 8. Update frame counter
         frameNumber++;
-
+        // flip the framebuffers
+        frameBuffers.reverse();
         // Update last shader for comparison
         if (rawShader !== lastShader) {
             lastShader = rawShader;
