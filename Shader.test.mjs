@@ -184,4 +184,17 @@ describe("Shader wrapping functionality", () => {
             });
         });
      });
+
+     describe("when wrapping a shader with render function", () => {
+        const shader = `
+        vec4 render(vec2 uv, vec4 prevColor) {
+            return vec4(1.0, 0.0, 0.0, 1.0);
+        }
+        `
+        it("should render correctly", () => {
+            render({ fragmentShader: shader });
+            const pixel = currentGetPixelColor(0, 0);
+            expect(pixel).to.deep.equal(new Uint8Array([255, 0, 0, 255]));
+        });
+     })
 });

@@ -18,15 +18,22 @@ const looksLikeAPrecisionLine = line => {
 
 // Add main function wrapper for ShaderToy compatibility
 const insertMain = shader => {
-    if (shader.includes('void main(')) {
-        return shader
-    }
+    if (shader.includes('void main(')) return shader
 
     if (shader.includes('void mainImage(')) {
         return `${shader}
         out vec4 fragColor;
         void main(void){
             mainImage(fragColor, gl_FragCoord.xy);
+        }`
+    }
+    if(shader.includes('vec4 render(vec2 uv,')) {
+        return `${shader}
+        out vec4 fragColor;
+        void main(void){
+            vec2 uv = gl_FragCoord.xy / resolution.xy;
+            vec4 prevColor = getLastFrameColor(uv);
+            fragColor = render(uv, prevColor);
         }`
     }
 
@@ -43,18 +50,14 @@ const hasUniformDeclaration = (shader, uniformName) => {
 // Create appropriate uniform declaration for a value
 const createUniformDeclaration = (key, value) => {
     if (Array.isArray(value)) {
-        const vecSize = Math.min(value.length, 4)
-        return `uniform vec${vecSize} ${key};`
+        if (value.length > 5) return null;
+        if (value.length == 0) return null;
+        return `uniform vec${value.length} ${key};`
     }
 
-    if (typeof value === 'number') {
-        return `uniform float ${key};`
-    }
+    if (typeof value === 'number') return `uniform float ${key};`
 
-    if (value && typeof value === 'object') {
-        return `uniform sampler2D ${key};`
-    }
-
+    if (value && typeof value === 'object') return `uniform sampler2D ${key};`
     return null
 }
 

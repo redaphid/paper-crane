@@ -242,31 +242,14 @@ export const make = async (deps) => { // Removed async as it's not used
 
     // Cleanup logic extracted
     const cleanupResources = () => {
-        try {
-             gl.getExtension('WEBGL_lose_context')?.loseContext();
-        } catch (e) {
-            console.warn("Error losing WebGL context:", e);
-        }
-        // Ensure canvas is cleared/reset
-        if (gl.canvas) {
-            gl.canvas.width = 1;
-            gl.canvas.height = 1;
-        }
+        gl.getExtension('WEBGL_lose_context')?.loseContext()
         // Delete resources - check existence before deleting
         frameBuffers.forEach(fb => {
-            if (fb?.framebuffer) gl.deleteFramebuffer(fb.framebuffer);
-            if (fb?.attachments?.[0]) gl.deleteTexture(fb.attachments[0]);
-        });
-        if (bufferInfo?.attribs?.position?.buffer) {
-            gl.deleteBuffer(bufferInfo.attribs.position.buffer);
-        }
-        if (programInfo?.program) {
-            gl.deleteProgram(programInfo.program);
-        }
-        if (initialTexture) { // Check if initialTexture was created
-             gl.deleteTexture(initialTexture);
-        }
-         console.log("PaperCrane resources cleaned up.");
+            gl.deleteFramebuffer(fb.framebuffer)
+            gl.deleteTexture(fb.attachments[0])
+        })
+        gl.deleteTexture(initialTexture)
+        gl.deleteProgram(programInfo?.program)
     }
 
     render.cleanup = () => {

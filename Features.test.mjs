@@ -1,21 +1,6 @@
 import { expect } from "chai"
 import { setupTestEnvironment, cleanupTestEnvironment, getPixelColor } from './testHelpers.mjs';
-import wrapFeatures from './Features.mjs'; // Assuming this is the correct path
-import wrapShader from './Shader.mjs'; // Assuming this is the correct path
-
-// Combine wrapFeatures and wrapShader for rendering
-const renderWithFeatures = async (shaderSource, featuresSource) => {
-    const { render, canvas } = await setupTestEnvironment();
-    // 1. Process features (resolve aliases)
-    const processedFeatures = wrapFeatures(featuresSource);
-    // 2. Wrap shader (will add uniforms based on processedFeatures)
-    // We don't need the wrapped shader string directly for rendering with `make`,
-    // as `make` handles the wrapping internally when features are passed.
-    // We just need to pass the original shader and the *processed* features.
-    render({ fragmentShader: shaderSource, features: processedFeatures });
-    return { render, canvas, getPixelColor }; // Return helpers for assertions
-};
-
+import wrap from './Features.mjs'; // Assuming this is the correct path
 
 describe("Features wrapping functionality", () => {
     let render, canvas, currentGetPixelColor;
@@ -41,7 +26,7 @@ describe("Features wrapping functionality", () => {
                 realValue: 0.5
             };
             // Manually wrap features first
-            const wrappedFeatures = wrapFeatures(features);
+            const wrappedFeatures = wrap(features);
             // Setup environment and render
             ({ render, canvas } = await setupTestEnvironment());
             render({ fragmentShader: testShader, features: wrappedFeatures });
@@ -60,7 +45,7 @@ describe("Features wrapping functionality", () => {
                 realValue: 0.75
             };
              // Manually wrap features first
-             const wrappedFeatures = wrapFeatures(features);
+             const wrappedFeatures = wrap(features);
              // Setup environment and render
              ({ render, canvas } = await setupTestEnvironment());
              render({ fragmentShader: testShader, features: wrappedFeatures });
@@ -78,7 +63,7 @@ describe("Features wrapping functionality", () => {
                 value: 123.0 / 255.0 // Use 'value' for the shader, normalize 123
             };
              // Manually wrap features first
-             const wrappedFeatures = wrapFeatures(features);
+             const wrappedFeatures = wrap(features);
              // Setup environment and render
              ({ render, canvas } = await setupTestEnvironment());
              render({ fragmentShader: testShader, features: wrappedFeatures });
