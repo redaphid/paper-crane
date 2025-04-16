@@ -113,19 +113,11 @@ const getInitialFrame = async (gl, initialImage) => {
         wrap: gl.REPEAT,
         src: initialImage
     }
-    return new Promise((resolve, reject) => {
-        console.log('before createTexture')
-        createTexture(gl, options, (err, texture, source) => {
-            console.log('after createTexture', err, texture, source)
-            if (err) return reject(err)
-            resolve(texture)
-        })
-    })
+    return createTexture(gl, options)
 }
 
 // Extracted helper to parse props for shader and features
 const getShaderAndFeaturesFromProps = (props, lastShader, previousFeatures) => {
-    console.log({props, lastShader, previousFeatures})
     if(props === undefined) return {rawShader: lastShader, features: {...previousFeatures}}
     if(typeof props === 'string') return {rawShader: props, features: {...previousFeatures}}
     if(typeof props !== 'object' || props === null) throw new Error('props must be an object or a string') // Added null check
@@ -156,7 +148,7 @@ const isUniform = (value) => {
 
 
 export const make = async (deps) => { // Removed async as it's not used
-    const {canvas, initialImage} = deps
+    const {canvas, initialImage, fragmentShader} = deps
     const startTime = performance.now()
 
     const gl = getWebGLContext(canvas);
@@ -169,7 +161,7 @@ export const make = async (deps) => { // Removed async as it's not used
     // State variables
     let frameNumber = 0
     let lastResolutionRatio = 1.0 // Start at 1.0
-    let lastShader = null
+    let lastShader = fragmentShader
     let previousFeatures = {}
 
     // Logic to copy rendered frame to canvas extracted
@@ -231,9 +223,9 @@ export const make = async (deps) => { // Removed async as it's not used
             }, {})
         };
         const wrappedUniforms = wrapFeatures(uniforms);
-        console.log({features, uniforms, wrappedUniforms})
+        console.log({features, uniforms, wrappedUniforms, rawShader})
         const wrappedShader = wrapShader(rawShader, wrappedUniforms);
-
+        console.log({wrappedShader})
         // 4. Check if shader needs recompile
         if (rawShader !== lastShader || !programInfo) {
             programInfo = createProgramInfo(gl, [defaultVertexShader, wrappedShader]);
