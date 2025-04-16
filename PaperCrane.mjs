@@ -286,11 +286,9 @@ export const make = async (deps) => { // Removed async as it's not used
     }
 
     render.cleanup = () => {
-        cleanupResources();
-        if(!gl.canvas) return new Image(1, 1);
-        if(gl.canvas.width < 1 || gl.canvas.height < 1) return new Image(1, 1);
         const image = new Image();
         image.src = gl.canvas.toDataURL();
+        cleanupResources();
         return image;
     }
     return render
