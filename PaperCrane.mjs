@@ -174,18 +174,24 @@ export const make = async (deps) => { // Removed async as it's not used
             0, 0, frame.width, frame.height, // Blit based on frame buffer size
             gl.COLOR_BUFFER_BIT, gl.NEAREST
         );
+        // Explicitly unbind the read framebuffer as well
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
     }
 
     const resizeAll= () => {
-        const ratio = 1
-        resizeCanvasToDisplaySize(gl.canvas, ratio)
-        frameBuffers.forEach(fb => resizeFramebufferInfo(gl, fb));
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        const ratio = 1 // Or calculate based on performance if needed
+        const resized = resizeCanvasToDisplaySize(gl.canvas, ratio)
+        // <<< RESTORE THIS >>> User requires FBOs to match canvas size for blit
+        if (resized) { // Only resize FBOs if canvas actually resized
+             frameBuffers.forEach(fb => resizeFramebufferInfo(gl, fb));
+             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        }
     }
 
     let programInfo
     const render = (props) => {
-        resizeAll()
+        resizeAll(); // Resize canvas/FBOs first
+
         let changedShader = false;
         const now = performance.now();
         const time = (now - startTime) / 1000;
@@ -196,29 +202,16 @@ export const make = async (deps) => { // Removed async as it's not used
         const [currentFrame, previousFrame] = frameBuffers
         const prevFrameTexture = frameNumber === 0 ? initialTexture : previousFrame.attachments[0];
 
-        const filteredFeatures = Object.fromEntries(
-            Object.entries(features).filter(([key, value]) => isUniform(value))
-        )
         // 3. Create dynamic context for uniforms
         const uniforms = {
             initialFrame: initialTexture, // For getInitialFrameColor
             prevFrame: prevFrameTexture,    // For getLastFrameColor
-            iResolution: [frameBuffers[0].width, frameBuffers[0].height, 1],
-            iTime: time,
-            iFrame: frameNumber,
+            resolution: [frameBuffers[0].width, frameBuffers[0].height, 1],
             time,
-            frameNumber,
-            width: frameBuffers[0].width,
-            height: frameBuffers[0].height,
-            touchX: features.touchX ?? 0,
-            touchY: features.touchY ?? 0,
+            frame: frameNumber,
             touched: features.touched ?? false,
-            ...Object.entries(features).reduce((acc, [key, value]) => {
-                if (isUniform(value)) {
-                    acc[key] = value;
-                }
-                return acc;
-            }, {})
+            touch: [features.touchX, features.touchY, features.touched ? 1: 0, 0],
+            ...features
         };
         const wrappedUniforms = wrapFeatures(uniforms);
         const wrappedShader = wrapShader(rawShader, wrappedUniforms);

@@ -23,10 +23,10 @@ const insertMain = shader => {
 
     if (shader.includes('void mainImage(')) {
         return `${shader}
-out vec4 fragColor;
-void main(void){
-    mainImage(fragColor, gl_FragCoord.xy);
-}`
+        out vec4 fragColor;
+        void main(void){
+            mainImage(fragColor, gl_FragCoord.xy);
+        }`
     }
 
     throw new Error(`No mainImage or main function found in shader`)
@@ -148,7 +148,7 @@ float random(vec2 st, float seed){
 }
 
 float random(vec2 st){
-    return random(st, iTime);
+    return random(st, time);
 }
 
 float staticRandom(vec2 st){
@@ -216,7 +216,7 @@ vec2 centerUv(vec2 res, vec2 coord) {
 }
 
 vec2 centerUv(vec2 coord) {
-    return centerUv(iResolution.xy, coord);
+    return centerUv(resolution.xy, coord);
 }
 
 vec3 hslmix(vec3 c1, vec3 c2, float t){

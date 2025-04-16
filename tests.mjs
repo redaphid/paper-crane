@@ -24,12 +24,12 @@ describe("PaperCrane", () => {
       cranesContainer.appendChild(canvas)
       render = await make({ canvas })
     })
-    afterEach(() => {
-      const image = render.cleanup()
-      // replace the canvas with the image
-      cranesContainer.removeChild(canvas)
-      cranesContainer.appendChild(image)
-    })
+    // afterEach(() => {
+    //   const image = render.cleanup()
+    //   // replace the canvas with the image
+    //   cranesContainer.removeChild(canvas)
+    //   cranesContainer.appendChild(image)
+    // })
     it("should exist", () => {
       expect(render).to.exist
     })
@@ -131,11 +131,11 @@ describe("PaperCrane", () => {
         })
       })
     })
-    describe("When called with only a shader and it references iTime", () => {
+    describe("When called with only a shader and it references time", () => {
       beforeEach(() => {
         render(`
           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            fragColor = vec4(0.0, 0.0, sin(iTime), 1.0);
+            fragColor = vec4(0.0, 0.0, sin(time), 1.0);
           }
         `)
       })
@@ -170,7 +170,7 @@ describe("PaperCrane", () => {
 
         render({fragmentShader: `
           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            vec2 uv = fragCoord.xy / iResolution.xy;
+            vec2 uv = fragCoord.xy / resolution.xy;
             vec3 color = getInitialFrameColor(uv).rgb;
             fragColor = vec4(color, 1.0);
           }
@@ -189,7 +189,7 @@ describe("PaperCrane", () => {
       beforeEach(async () => {
         render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            vec2 uv = fragCoord.xy / iResolution.xy;
+            vec2 uv = fragCoord.xy / resolution.xy;
             vec3 color = getLastFrameColor(uv).rgb;
             vec3 inverted = vec3(1.0 - color.r, 1.0 - color.g, 1.0 - color.b);
             fragColor = vec4(inverted, 1.0);

@@ -40,32 +40,6 @@ const resolveReferences = uniforms => {
  */
 export const wrap = (features = {}) => {
    return  resolveReferences({
-
-        // ShaderToy primary uniforms
-        iTime: features.time,
-        iFrame: features.frameNumber,
-        iResolution: [features.width, features.height, 1.0],
-        iMouse: [features.touchX, features.touchY, features.touched ? 1.0 : 0.0, 0.0],
-
-        // Channel uniforms - double-buffering scheme
-        // iChannel0 is used for initialTexture (static/input texture)
-        // iChannel1 is used for prevFrameTexture (previous frame, or initialTexture on frame 0)
-        iChannel0: features.initialTexture,     // Static/input texture for getInitialFrameColor
-        iChannel1: features.prevFrameTexture ?? features.initialTexture,   // Previous frame texture provided by dynamic context
-
-        // Additional ShaderToy uniforms
-        iDate: [
-            new Date().getFullYear(),
-            new Date().getMonth() + 1,
-            new Date().getDate(),
-            features.time
-        ],
-        iSampleRate: 44100.0,
-
-        // Aliases and alternatives
-        time: features.time,
-        frame: features.frameNumber,
-        resolution: [features.width, features.height],
         ...features
     })
 }
