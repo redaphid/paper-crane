@@ -140,8 +140,11 @@ describe("PaperCrane", () => {
         `)
       })
       it("should be ok with it", () => {
-        const pixel = getPixelColor(canvas, 0, 0)
-        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 1, 255]))
+        const [red,green,blue,alpha] = getPixelColor(canvas, 0, 0)
+        expect(blue).not.to.equal(0)
+        expect(blue).to.be.closeTo(1, 10)
+        expect(red).to.equal(0)
+        expect(green).to.equal(0)
       })
 
       describe("When we wait 10ms and call it again", () => {

@@ -125,19 +125,13 @@ const getInitialFrame = async (gl, initialImage) => {
 
 // Extracted helper to parse props for shader and features
 const getShaderAndFeaturesFromProps = (props, lastShader, previousFeatures) => {
+    console.log({props, lastShader, previousFeatures})
     if(props === undefined) return {rawShader: lastShader, features: {...previousFeatures}}
     if(typeof props === 'string') return {rawShader: props, features: {...previousFeatures}}
     if(typeof props !== 'object' || props === null) throw new Error('props must be an object or a string') // Added null check
 
     const {fragmentShader, features: explicitFeatures, ...otherProps} = props;
 
-    // Special case for test in tests.mjs that passes { blue: X } directly
-    if (props.hasOwnProperty('blue') && typeof props.blue === 'number') {
-        return {
-            rawShader: lastShader,
-            features: {...previousFeatures, blue: props.blue}
-        }
-    }
 
     // Combine features explicitly provided and other props
     const features = {
@@ -199,10 +193,11 @@ export const make = async (deps) => { // Removed async as it's not used
 
     let programInfo
     const render = (props) => {
+        console.log('render', props)
         resizeAll()
         let changedShader = false;
         const now = performance.now();
-        const time = now - startTime;
+        const time = (now - startTime) / 1000;
 
         // 1. Parse props
         const { rawShader, features } = getShaderAndFeaturesFromProps(props, lastShader, previousFeatures);
@@ -236,6 +231,7 @@ export const make = async (deps) => { // Removed async as it's not used
             }, {})
         };
         const wrappedUniforms = wrapFeatures(uniforms);
+        console.log({features, uniforms, wrappedUniforms})
         const wrappedShader = wrapShader(rawShader, wrappedUniforms);
 
         // 4. Check if shader needs recompile
