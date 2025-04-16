@@ -80,7 +80,10 @@ const addUniforms = (shader, features) => {
 
     // Generate needed uniform declarations
     const neededDeclarations = Object.entries(features)
-        .filter(([key]) => !hasUniformDeclaration(shader, key))
+        .filter(([key]) => {
+            // Only process keys that are valid identifiers and don't already have uniform declarations
+            return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key) && !hasUniformDeclaration(shader, key);
+        })
         .map(([key, value]) => createUniformDeclaration(key, value))
         .filter(Boolean)
 

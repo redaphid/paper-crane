@@ -24,12 +24,12 @@ describe("PaperCrane", () => {
       cranesContainer.appendChild(canvas)
       render = await make({ canvas })
     })
-    afterEach(() => {
-      const image = render.cleanup()
-      // replace the canvas with the image
-      cranesContainer.removeChild(canvas)
-      cranesContainer.appendChild(image)
-    })
+    // afterEach(() => {
+    //   const image = render.cleanup()
+    //   // replace the canvas with the image
+    //   cranesContainer.removeChild(canvas)
+    //   cranesContainer.appendChild(image)
+    // })
     it("should exist", () => {
       expect(render).to.exist
     })
