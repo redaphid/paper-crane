@@ -19,10 +19,10 @@ describe("PaperCrane", () => {
     let render
     /** @type {HTMLCanvasElement} */
     let canvas
-    beforeEach(() => {
+    beforeEach(async () => {
       canvas = document.createElement("canvas")
       cranesContainer.appendChild(canvas)
-      render = make({ canvas })
+      render = await make({ canvas })
     })
     afterEach(() => {
       const image = render.cleanup()
@@ -161,9 +161,9 @@ describe("PaperCrane", () => {
 
     })
     describe("When called with a shader and an initial image", () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         const image = document.getElementById("initial-image")
-        render = make({ canvas, initialImage: image });
+        render = await make({ canvas, initialImage: image });
 
         render({fragmentShader: `
           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
@@ -181,10 +181,10 @@ describe("PaperCrane", () => {
           expect(red).to.be.greaterThan(blue)
       })
   })
-  describe("When a shader uses getLastFrameColor", () => {
+  describe("When a shader uses getLastFrameColor, and inverts whatever color was in the last frame", () => {
     let lastGreen
-    beforeEach(() => {
-      render = make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
+    beforeEach(async () => {
+      render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
         void mainImage(out vec4 fragColor, in vec2 fragCoord) {
           vec2 uv = fragCoord.xy / iResolution.xy;
           vec3 color = getLastFrameColor(uv).rgb;

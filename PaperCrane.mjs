@@ -7,10 +7,23 @@ import {
     setBuffersAndAttributes,
     setUniforms,
     drawBufferInfo,
+    resizeFramebufferInfo,
 } from 'twgl'
 
 import { wrap as wrapShader } from './Shader.mjs'
 import { wrap as wrapFeatures } from './Features.mjs'
+
+const defaultVertexShader = `#version 300 es
+in vec4 position;
+void main() {
+    gl_Position = position;
+}`
+
+const defaultFragmentShader = `#version 300 es
+void main() {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}`
+
 // Simple full-screen quad
 const positions = [
     -1, -1, 0,
@@ -20,6 +33,8 @@ const positions = [
     1, -1, 0,
     1, 1, 0,
 ]
+
+// Extracted helper for handling shader compilation errors
 const handleShaderError = (gl, wrappedFragmentShader) => {
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fragmentShader, wrappedFragmentShader);
@@ -46,45 +61,11 @@ const handleShaderError = (gl, wrappedFragmentShader) => {
         message = error.split(':').slice(3).join(':').trim();
     }
 
-    throw new Error({lineNumber, message})
+    throw new Error(JSON.stringify({lineNumber, message})) // Ensure error is properly stringified
 }
 
-const calculateResolutionRatio = (frameTime, renderTimes, lastResolutionRatio) => {
-    // Add current frame time and maintain maximum 20 samples
-    const newRenderTimes = [...renderTimes.slice(-19), frameTime]
-
-    // Need at least 20 samples to make adjustment
-    if (newRenderTimes.length < 20)  return [lastResolutionRatio, newRenderTimes]
-
-    // Calculate average frame time
-    const avgFrameTime = newRenderTimes.reduce((sum, time) => sum + time, 0) / newRenderTimes.length
-
-    // Adjust resolution based on performance
-    if (avgFrameTime > 50) return [Math.max(0.5, lastResolutionRatio - 0.5), []]
-
-    if (avgFrameTime < 20 && lastResolutionRatio < 1) return [Math.min(1, lastResolutionRatio + 0.1), []]
-
-
-    return [lastResolutionRatio, newRenderTimes]
-}
-
-// Default vertex shader for full-screen quad
-const defaultVertexShader = `#version 300 es
-in vec4 position;
-void main() {
-    gl_Position = position;
-}`
-const getEmptyTexture = (gl) => {
-    const texture = createTexture(gl, {
-        width: 1,
-        height: 1,
-    })
-    return texture
-}
-export const make = (deps) => {
-    const {canvas, initialImage} = deps
-    const startTime = performance.now()
-
+// Extracted helper for getting WebGL2 context
+const getWebGLContext = (canvas) => {
     const gl = canvas.getContext('webgl2', {
         antialias: false,
         powerPreference: 'high-performance',
@@ -96,11 +77,15 @@ export const make = (deps) => {
             pixelRatio: 1
         }
     })
+    if (!gl) {
+        throw new Error("WebGL2 not supported");
+    }
+    return gl;
+}
 
-    const initialTexture = getEmptyTexture(gl)
+// Extracted helper for creating and configuring framebuffers
+const createFramebuffers = (gl) => {
     const frameBuffers = [createFramebufferInfo(gl), createFramebufferInfo(gl)]
-
-    // Set texture parameters for both framebuffers
     frameBuffers.forEach(fb => {
         const texture = fb.attachments[0]
         gl.bindTexture(gl.TEXTURE_2D, texture)
@@ -109,197 +94,210 @@ export const make = (deps) => {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
     })
+    return frameBuffers;
+}
 
-    const bufferInfo = createBufferInfoFromArrays(gl, { position: positions })
+
+/**
+ * @param {WebGLRenderingContext} gl
+ * @param {HTMLImageElement} initialImage
+ * @returns {Promise<WebGLTexture>}
+ */
+const getInitialFrame = async (gl, initialImage) => {
+    if(!initialImage) return createTexture(gl, { width: 1, height: 1, min: gl.NEAREST, mag: gl.NEAREST, wrap: gl.REPEAT })
+    const options = {
+        width: initialImage?.width ?? 1,
+        height: initialImage?.height ?? 1,
+        min: gl.NEAREST,
+        mag: gl.NEAREST,
+        wrap: gl.REPEAT,
+        src: initialImage
+    }
+    return new Promise((resolve, reject) => {
+        console.log('before createTexture')
+        createTexture(gl, options, (err, texture, source) => {
+            console.log('after createTexture', err, texture, source)
+            if (err) return reject(err)
+            resolve(texture)
+        })
+    })
+}
+
+// Extracted helper to parse props for shader and features
+const getShaderAndFeaturesFromProps = (props, lastShader, previousFeatures) => {
+    if(props === undefined) return {rawShader: lastShader, features: {...previousFeatures}}
+    if(typeof props === 'string') return {rawShader: props, features: {...previousFeatures}}
+    if(typeof props !== 'object' || props === null) throw new Error('props must be an object or a string') // Added null check
+
+    const {fragmentShader, ...otherFeatures} = props; // Use rest syntax for features
+    // If fragmentShader is provided, features are the rest. Otherwise, all props are features.
+    const features = fragmentShader !== undefined ? otherFeatures : props;
+
+    return {
+        rawShader: fragmentShader ?? lastShader,
+        features: {...previousFeatures, ...features}
+    }
+}
+
+
+const isUniform = (value) => {
+    if(typeof value === 'number' && Number.isFinite(value)) return true
+    if(Array.isArray(value) && value.every(v => typeof v === 'number' && Number.isFinite(v))) return true
+    if(value && typeof value === 'object') return Array.from(value).every(isUniform)
+    return false
+}
+
+
+export const make = async (deps) => { // Removed async as it's not used
+    const {canvas, initialImage} = deps
+    const startTime = performance.now()
+
+    const gl = getWebGLContext(canvas);
+    const initialTexture = await getInitialFrame(gl, initialImage); // Use internal helper
+    const frameBuffers = createFramebuffers(gl);
+    const bufferInfo = createBufferInfoFromArrays(gl, {
+        position: {
+            numComponents: 3,
+            data: positions
+        }
+    });
 
     // State variables
     let frameNumber = 0
     let lastRender = performance.now()
-    let programInfo = null
+
     let renderTimes = []
-    let lastResolutionRatio = 1
-
-
-    // Track the raw shader and wrapped compiled shader separately
+    let lastResolutionRatio = 1.0 // Start at 1.0
     let lastShader = null
     let previousFeatures = {}
 
-    const getInitialTexture = () => {
-        if (!initialImage) return initialTexture;
-
-        if (initialImage instanceof HTMLImageElement) {
-            // For tests, directly use the image as texture source
-
-                // Create texture with flip-y to match expected orientation
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-                const texture = createTexture(gl, {
-                    src: initialImage,
-                    min: gl.NEAREST,
-                    mag: gl.NEAREST,
-                    wrap: gl.REPEAT
-                })
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
-                return texture
-
-        }
-
-        return initialTexture
+    // Logic to copy rendered frame to canvas extracted
+    const copyFrameToCanvas = (frame) => {
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, frame.framebuffer);
+        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+        // Ensure dimensions match the framebuffer, not potentially resized canvas
+        gl.blitFramebuffer(
+            0, 0, frame.width, frame.height,
+            0, 0, frame.width, frame.height, // Blit based on frame buffer size
+            gl.COLOR_BUFFER_BIT, gl.NEAREST
+        );
     }
 
-    // Compile the shader and update programInfo
-    const regenerateProgramInfo = (wrappedShader) => {
-        programInfo = createProgramInfo(gl, [defaultVertexShader, wrappedShader])
-        if (!programInfo?.program) {
-            handleShaderError(gl, wrappedShader);
-            programInfo = null;
-            return false;
-        }
-        gl.useProgram(programInfo.program)
-        return true;
-    }
-
-    // Extract shader and features from props
-    const getShaderAndFeatures = (props) => {
-        // if props is undefined, then use the last fragment shader and features
-        if(props === undefined) return {rawShader: lastShader, features: {...previousFeatures}}
-
-        // If props is a string, it's a shader
-        if(typeof props === 'string') return {rawShader: props, features: {...previousFeatures}}
-
-        // Must be an object at this point
-        if(typeof props !== 'object') throw new Error('props must be an object or a string')
-
-        // Extract shader and features from object
-        const {fragmentShader, features = props} = props
-        return {
-            rawShader: fragmentShader ?? lastShader,
-            features: {...previousFeatures, ...features}
+    const resizeAll= () => {
+        const ratio = calculateResolutionRatio(frameTime, renderTimes, lastResolutionRatio)
+        if(resizeCanvasToDisplaySize(gl.canvas, ratio)) {
+            frameBuffers.forEach(fb => resizeFramebufferInfo(gl, fb));
         }
     }
 
-    // Filter uniforms to remove invalid values
-    const filterUniforms = uniforms =>
-        Object.fromEntries(
-            Object.entries(uniforms).filter(([, value]) =>
-                // Accept finite numbers
-                (typeof value === 'number' && Number.isFinite(value)) ||
-                // Accept arrays of finite numbers (for vec uniforms like iResolution)
-                (Array.isArray(value) && value.every(v => typeof v === 'number' && Number.isFinite(v))) ||
-                // Accept WebGL textures (for sampler uniforms like iChannel0)
-                (value && typeof value === 'object')
-            )
-        )
-
+    let programInfo
     const render = (props) => {
-        let changedShader = false
+        let changedShader = false;
+        const now = performance.now();
+        const time = now - startTime;
+        const frameTime = now - lastRender;
+        lastRender = now;
 
-        // 1. Parse props to get raw shader and features
-        const {rawShader, features} = getShaderAndFeatures(props)
+        // 1. Parse props
+        const { rawShader, features } = getShaderAndFeaturesFromProps(props, lastShader, previousFeatures);
 
-        // Get current time and calculate frame time
-        const now = performance.now()
-        const time = now - startTime
-        const frameTime = now - lastRender
-        lastRender = now
+        const prevFrame = frameBuffers[(frameNumber + 1) % 2];
+        const prevFrameTexture = frameNumber === 0 ? initialTexture : prevFrame.attachments[0];
 
-        // Get current and previous frame buffers
-        const frame = frameBuffers[frameNumber % 2]
-        const prevFrame = frameBuffers[(frameNumber + 1) % 2]
-
-        // Get texture for the initial image
-        const currentInitialTexture = getInitialTexture()
-
-        // Create dynamic context
-        const dynamicContext = {
-            initialTexture: currentInitialTexture,
-            prevFrameTexture: frameNumber === 0 ? currentInitialTexture : prevFrame.attachments[0],
+        const filteredFeatures = Object.fromEntries(
+            Object.entries(features).filter(([key, value]) => isUniform(value))
+        )
+        // 3. Create dynamic context for uniforms
+        const uniforms = {
+            initialTexture: initialTexture,
+            prevFrameTexture: prevFrameTexture,
             time,
             frameNumber,
-            random: Math.random(),
+
+            width: frameBuffers[0].width,
+            height: frameBuffers[0].height,
+
             touchX: features?.touchX ?? 0,
             touchY: features?.touchY ?? 0,
             touched: features?.touched ?? false,
-            width: features?.width ?? gl.canvas.width,
-            height: features?.height ?? gl.canvas.height
+            ...previousFeatures,
+            ...filteredFeatures,
+
+        };
+        const wrappedUniforms = wrapFeatures(uniforms);
+        const wrappedShader = wrapShader(rawShader, wrappedUniforms);
+
+        // 4. Check if shader needs recompile
+        if (rawShader !== lastShader || !programInfo) {
+            programInfo = createProgramInfo(gl, [defaultVertexShader, wrappedShader]);
         }
 
-        // 2. Check if shader needs to be recompiled
-        if (rawShader !== lastShader) {
-            // Pass features without initialImage to wrapFeatures
-            const featuresForShader = { ...features };
-            const wrappingFeatures = wrapFeatures(featuresForShader, dynamicContext)
+        // Skip render if program is invalid
+        if (!programInfo?.program) return false;
+        // 6. Execute Render Pass
+        const currentFrame = frameBuffers[frameNumber % 2];
 
-            // Wrap the raw shader with boilerplate and uniform declarations
-            const wrappedShader = wrapShader(rawShader, wrappingFeatures)
+        setBuffersAndAttributes(gl, programInfo, bufferInfo);
+        setUniforms(programInfo, wrappedUniforms);
+        drawBufferInfo(gl, bufferInfo);
 
-            // Attempt to compile the wrapped shader
-            if (regenerateProgramInfo(wrappedShader)) {
-                // Compilation successful, update state
-                lastShader = rawShader
-                previousFeatures = features
-                changedShader = true
-            }
-        }
-
-        // Skip render if we don't have a valid program
-        if (!programInfo?.program) return false
-
-        // 3. Set up render target
-        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, frame.framebuffer)
-
-        // 4. Process features with dynamic context to get uniforms for rendering
-        // Pass features without initialImage to wrapFeatures
-        const featuresForUniforms = { ...features };
-        const uniforms = filterUniforms(wrapFeatures(featuresForUniforms, dynamicContext))
-
-        // 6. Set uniforms and render
-        setBuffersAndAttributes(gl, programInfo, bufferInfo)
-        setUniforms(programInfo, uniforms)
-
-        drawBufferInfo(gl, bufferInfo)
-
-        // 7. Copy rendered result to canvas
-        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, frame.framebuffer)
-        gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null)
-        gl.blitFramebuffer(
-            0, 0, frame.width, frame.height,
-            0, 0, gl.canvas.width, gl.canvas.height,
-            gl.COLOR_BUFFER_BIT, gl.NEAREST
-        )
+        // 7. Copy to Canvas
+        copyFrameToCanvas(currentFrame);
 
         // 8. Update frame counter
-        frameNumber++
+        frameNumber++;
 
-        // 9. Handle performance-based resolution adjustment
-        const [newResolutionRatio, newRenderTimes] = calculateResolutionRatio(frameTime, renderTimes, lastResolutionRatio)
-        renderTimes = newRenderTimes
-        // Apply resolution change if needed
-        if (newResolutionRatio !== lastResolutionRatio) {
-            console.log(`Adjusting resolution ratio to ${newResolutionRatio.toFixed(2)}`)
-            resizeCanvasToDisplaySize(gl.canvas, newResolutionRatio)
-            lastResolutionRatio = newResolutionRatio
-            renderTimes = []
-        }
-
-        return changedShader
+        return changedShader;
     }
 
-    // Add cleanup method to render function
-    render.cleanup = () => {
-        // get an image from the canvas
-        const image = new Image()
-        image.src = gl.canvas.toDataURL()
-        gl.getExtension('WEBGL_lose_context')?.loseContext();
-        gl.canvas.width = 1;
-        gl.canvas.height = 1;
+    // Cleanup logic extracted
+    const cleanupResources = () => {
+        try {
+             gl.getExtension('WEBGL_lose_context')?.loseContext();
+        } catch (e) {
+            console.warn("Error losing WebGL context:", e);
+        }
+        // Ensure canvas is cleared/reset
+        if (gl.canvas) {
+            gl.canvas.width = 1;
+            gl.canvas.height = 1;
+        }
+        // Delete resources - check existence before deleting
         frameBuffers.forEach(fb => {
-            gl.deleteFramebuffer(fb.framebuffer);
-            gl.deleteTexture(fb.attachments[0]);
+            if (fb?.framebuffer) gl.deleteFramebuffer(fb.framebuffer);
+            if (fb?.attachments?.[0]) gl.deleteTexture(fb.attachments[0]);
         });
-        gl.deleteBuffer(bufferInfo.attribs.position.buffer);
-        gl.deleteProgram(programInfo?.program);
-        gl.deleteTexture(initialTexture);
+        if (bufferInfo?.attribs?.position?.buffer) {
+            gl.deleteBuffer(bufferInfo.attribs.position.buffer);
+        }
+        if (programInfo?.program) {
+            gl.deleteProgram(programInfo.program);
+        }
+        if (initialTexture) { // Check if initialTexture was created
+             gl.deleteTexture(initialTexture);
+        }
+         console.log("PaperCrane resources cleaned up.");
+    }
+
+    render.cleanup = () => {
+        cleanupResources();
+        if(!gl.canvas) return new Image(1, 1);
+        if(gl.canvas.width < 1 || gl.canvas.height < 1) return new Image(1, 1);
+        const image = new Image();
+        image.src = gl.canvas.toDataURL();
         return image;
     }
+
+    // Initial resize to match canvas display size if necessary
+    // Note: This might conflict with resolution scaling logic if canvas size changes later.
+    // Consider setting initial framebuffer size explicitly based on initial canvas dimensions.
+    resizeCanvasToDisplaySize(gl.canvas, lastResolutionRatio);
+    // We might need to resize the framebuffers here as well after the initial canvas resize
+    // twgl.resizeFramebufferInfo(gl, frameBuffers[0]);
+    // twgl.resizeFramebufferInfo(gl, frameBuffers[1]);
+    // *** Resize framebuffers after initial canvas resize ***
+    frameBuffers.forEach(fb => resizeFramebufferInfo(gl, fb));
+
+
     return render
 }

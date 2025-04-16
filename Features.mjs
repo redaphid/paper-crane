@@ -33,78 +33,41 @@ const resolveReferences = uniforms => {
     return result
 }
 
-// Create ShaderToy standard uniforms with values from context
-const createStandardUniforms = ({
-    time,
-    frameNumber,
-    width,
-    height,
-    touchX,
-    touchY,
-    touched,
-    prevFrameTexture,
-    initialTexture,
-    random
-}) => {
-    const timeInSeconds = time / 1000.0
+/**
+ * Wraps features with ShaderToy uniforms and resolves references
+ * @param {Object} features - User-provided features
+ * @returns {Object} - Complete uniform object with all values resolved
+ */
+export const wrap = (features = {}) => {
+   return  resolveReferences({
 
-    return {
         // ShaderToy primary uniforms
-        iTime: timeInSeconds,
-        iFrame: frameNumber,
-        iResolution: [width, height, 1.0],
-        iMouse: [touchX, touchY, touched ? 1.0 : 0.0, 0.0],
+        iTime: features.time,
+        iFrame: features.frameNumber,
+        iResolution: [features.width, features.height, 1.0],
+        iMouse: [features.touchX, features.touchY, features.touched ? 1.0 : 0.0, 0.0],
 
         // Channel uniforms - double-buffering scheme
         // iChannel0 is used for initialTexture (static/input texture)
         // iChannel1 is used for prevFrameTexture (previous frame, or initialTexture on frame 0)
-        iChannel0: initialTexture,     // Static/input texture for getInitialFrameColor
-        iChannel1: prevFrameTexture,   // Previous frame texture provided by dynamic context
+        iChannel0: features.initialTexture,     // Static/input texture for getInitialFrameColor
+        iChannel1: features.prevFrameTexture ?? features.initialTexture,   // Previous frame texture provided by dynamic context
 
         // Additional ShaderToy uniforms
         iDate: [
             new Date().getFullYear(),
             new Date().getMonth() + 1,
             new Date().getDate(),
-            timeInSeconds
+            features.time
         ],
         iSampleRate: 44100.0,
 
         // Aliases and alternatives
-        time: timeInSeconds,
-        frame: frameNumber,
-        iRandom: random,
-        resolution: [width, height]
-    }
-}
-
-
-/**
- * Wraps features with ShaderToy uniforms and resolves references
- * @param {Object} features - User-provided features
- * @param {Object} defaultFeatures - Context values from renderer
- * @returns {Object} - Complete uniform object with all values resolved
- */
-export const wrap = (features = {}, defaultFeatures = {}) => {
-    // Extract context values needed for standard uniforms
-    const contextValues = defaultFeatures
-
-    // Create standard ShaderToy uniforms
-    const standardValues = createStandardUniforms(contextValues)
-
-    // Ensure texture channels are always available, even if not referenced in the shader
-
-    // Merge with user features (user values take precedence)
-    const mergedUniforms = {
-        ...standardValues,
-        ...Object.fromEntries(
-            Object.entries(features)
-                .filter(([, value]) => value !== undefined)
-        )
-    }
-
-    // Resolve any string references
-    return resolveReferences(mergedUniforms)
+        time: features.time,
+        frame: features.frameNumber,
+        resolution: [features.width, features.height],
+        ...features
+    })
 }
 
 export default wrap
