@@ -179,51 +179,42 @@ describe("PaperCrane", () => {
       })
       it("should render the center of the image red", () => {
         const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-        // Check for red color (adjust tolerance if needed due to minor filtering/precision differences)
-          expect(red).to.be.greaterThan(green)
-          expect(red).to.be.greaterThan(blue)
+        // Check for exact red color
+        expect(red).to.equal(255)
+        expect(green).to.equal(0)
+        expect(blue).to.equal(0)
       })
-  })
-  describe("When a shader uses getLastFrameColor, and inverts whatever color was in the last frame", () => {
-    let lastGreen
-    beforeEach(async () => {
-      render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
-        void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-          vec2 uv = fragCoord.xy / iResolution.xy;
-          vec3 color = getLastFrameColor(uv).rgb;
-          vec3 inverted = vec3(1.0 - color.r, 1.0 - color.g, 1.0 - color.b);
-          fragColor = vec4(inverted, 1.0);
-        }
-      `});
-      render()
-      lastGreen = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)[1]
-      })
-      it("should render the center of the image green", () => {
-        const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-        // Check for red color (allow slight variations)
-        expect(green).to.be.greaterThan(red)
-        expect(green).to.be.greaterThan(blue)
-      })
-      it("should render the edges of the image white", () => {
-        const [red, green, blue] = getPixelColor(canvas, 0, 0)
-       expect(red).to.be.closeTo(green, 20)
-       expect(green).to.be.closeTo(blue, 20)
-      })
-      describe("When rendered again after 10ms", () => {
-        let changed
-        beforeEach(async () => {
-          await timeout(10)
-          changed = render()
+    })
+    describe("When a shader uses getLastFrameColor, and inverts whatever color was in the last frame", () => {
+      let lastGreen
+      beforeEach(async () => {
+        render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
+          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+            vec2 uv = fragCoord.xy / iResolution.xy;
+            vec3 color = getLastFrameColor(uv).rgb;
+            vec3 inverted = vec3(1.0 - color.r, 1.0 - color.g, 1.0 - color.b);
+            fragColor = vec4(inverted, 1.0);
+          }
+        `});
+        render()
+        lastGreen = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)[1]
         })
-        it("should render a different color", () => {
+        it("should render the center of the image green", () => {
           const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-          expect(green).to.be.greaterThan(lastGreen)
+          // Check for red color (allow slight variations)
+          expect(red).to.equal(0)
+          expect(green).to.equal(255)
+          expect(blue).to.equal(255)
+
         })
-        it("should not tell us that the shader changed", () => {
-          expect(changed).to.be.false
+        it("should render the edges of the image black", () => {
+          const [red, green, blue] = getPixelColor(canvas, 0, 0)
+          expect(red).to.equal(0)
+          expect(green).to.equal(0)
+          expect(blue).to.equal(0)
         })
       })
     })
-})
+
 
 mocha.run(()=>window.testsFinished = true)

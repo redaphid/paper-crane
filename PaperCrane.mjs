@@ -185,7 +185,6 @@ export const make = async (deps) => { // Removed async as it's not used
 
     let programInfo
     const render = (props) => {
-        console.log('render', props)
         resizeAll()
         let changedShader = false;
         const now = performance.now();
@@ -259,7 +258,6 @@ export const make = async (deps) => { // Removed async as it's not used
 
     // Cleanup logic extracted
     const cleanupResources = () => {
-        return true
         try {
              gl.getExtension('WEBGL_lose_context')?.loseContext();
         } catch (e) {
@@ -295,17 +293,5 @@ export const make = async (deps) => { // Removed async as it's not used
         image.src = gl.canvas.toDataURL();
         return image;
     }
-
-    // Initial resize to match canvas display size if necessary
-    // Note: This might conflict with resolution scaling logic if canvas size changes later.
-    // Consider setting initial framebuffer size explicitly based on initial canvas dimensions.
-    resizeCanvasToDisplaySize(gl.canvas, lastResolutionRatio);
-    // We might need to resize the framebuffers here as well after the initial canvas resize
-    // twgl.resizeFramebufferInfo(gl, frameBuffers[0]);
-    // twgl.resizeFramebufferInfo(gl, frameBuffers[1]);
-    // *** Resize framebuffers after initial canvas resize ***
-    frameBuffers.forEach(fb => resizeFramebufferInfo(gl, fb));
-
-
     return render
 }
