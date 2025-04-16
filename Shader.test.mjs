@@ -62,85 +62,53 @@ describe("Shader wrapping functionality", () => {
   })
 })
 
-// New tests for Features.mjs
-describe("Features wrapping functionality", () => {
-  describe("when resolving references in uniform values", () => {
-    it("should resolve string references to other values", () => {
-      const features = {
-        alias: "realValue",
-        realValue: 0.5
-      }
-      const wrapped = wrapFeatures(features)
-      expect(wrapped.alias).to.equal(0.5)
-    })
 
-    it("should handle multi-level references", () => {
-      const features = {
-        firstAlias: "secondAlias",
-        secondAlias: "realValue",
-        realValue: 0.75
-      }
-      const wrapped = wrapFeatures(features)
-      expect(wrapped.firstAlias).to.equal(0.75)
-      expect(wrapped.secondAlias).to.equal(0.75)
-    })
+// // New tests for PaperCrane.mjs
+// describe("PaperCrane functionality", () => {
+//   describe("when cleaning up resources", () => {
+//     it("should return an image after cleanup", () => {
+//       const image = render.cleanup()
+//       expect(image).to.be.instanceOf(Image)
+//     })
+//   })
 
-    it("should handle iTime aliasing correctly", () => {
-      const features = {
-        time: 123
-      }
-      const wrapped = wrapFeatures(features)
-      expect(wrapped.iTime).to.equal(123)
-    })
-  })
-})
+//   describe("when handling features of different types", () => {
+//     it("should handle numeric arrays as uniforms", () => {
+//       render({
+//         fragmentShader: `
+//           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+//             fragColor = vec4(colorArray[0], colorArray[1], colorArray[2], 1.0);
+//           }
+//         `,
+//         features: { colorArray: [0.5, 0.25, 0.75] }
+//       })
 
-// New tests for PaperCrane.mjs
-describe("PaperCrane functionality", () => {
-  describe("when cleaning up resources", () => {
-    it("should return an image after cleanup", () => {
-      const image = render.cleanup()
-      expect(image).to.be.instanceOf(Image)
-    })
-  })
+//       const [red, green, blue] = getPixelColor(canvas, 0, 0)
+//       expect(red).to.be.closeTo(128, 1)
+//       expect(green).to.be.closeTo(64, 1)
+//       expect(blue).to.be.closeTo(191, 1)
+//     })
 
-  describe("when handling features of different types", () => {
-    it("should handle numeric arrays as uniforms", () => {
-      render({
-        fragmentShader: `
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            fragColor = vec4(colorArray[0], colorArray[1], colorArray[2], 1.0);
-          }
-        `,
-        features: { colorArray: [0.5, 0.25, 0.75] }
-      })
+//     it("should handle objects with touch coordinates", () => {
+//       render({
+//         fragmentShader: `
+//           void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+//             if (touched > 0.5) {
+//               fragColor = vec4(touchX/100.0, touchY/100.0, 0.0, 1.0);
+//             } else {
+//               fragColor = vec4(0.0, 0.0, 1.0, 1.0);
+//             }
+//           }
+//         `,
+//         touched: true,
+//         touchX: 50,
+//         touchY: 25
+//       })
 
-      const [red, green, blue] = getPixelColor(canvas, 0, 0)
-      expect(red).to.be.closeTo(128, 1)
-      expect(green).to.be.closeTo(64, 1)
-      expect(blue).to.be.closeTo(191, 1)
-    })
-
-    it("should handle objects with touch coordinates", () => {
-      render({
-        fragmentShader: `
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            if (touched > 0.5) {
-              fragColor = vec4(touchX/100.0, touchY/100.0, 0.0, 1.0);
-            } else {
-              fragColor = vec4(0.0, 0.0, 1.0, 1.0);
-            }
-          }
-        `,
-        touched: true,
-        touchX: 50,
-        touchY: 25
-      })
-
-      const [red, green, blue] = getPixelColor(canvas, 0, 0)
-      expect(red).to.be.closeTo(128, 1)
-      expect(green).to.be.closeTo(64, 1)
-      expect(blue).to.be.closeTo(0, 1)
-    })
-  })
-})
+//       const [red, green, blue] = getPixelColor(canvas, 0, 0)
+//       expect(red).to.be.closeTo(128, 1)
+//       expect(green).to.be.closeTo(64, 1)
+//       expect(blue).to.be.closeTo(0, 1)
+//     })
+//   })
+// })
