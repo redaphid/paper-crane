@@ -75,7 +75,7 @@ describe("PaperCrane", () => {
       })
       it("should render a blue square", () => {
         const pixel = getPixelColor(canvas, 0, 0)
-        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 128, 255]))
+        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 127, 255]))
       })
       describe("When called and that feature changes", () => {
         let res
@@ -111,7 +111,7 @@ describe("PaperCrane", () => {
         })
         it("should be fine with it", () => {
           const pixel = getPixelColor(canvas, 0, 0)
-          expect(pixel).to.deep.equal(new Uint8Array([0, 0, 128, 255]))
+          expect(pixel).to.deep.equal(new Uint8Array([0, 0, 127, 255]))
         })
         it("should not tell us that the shader changed", () => {
           expect(res).to.be.false
@@ -124,7 +124,7 @@ describe("PaperCrane", () => {
         })
         it("should render a blue square", () => {
           const pixel = getPixelColor(canvas, 0, 0)
-          expect(pixel).to.deep.equal(new Uint8Array([0, 0, 128, 255]))
+          expect(pixel).to.deep.equal(new Uint8Array([0, 0, 127, 255]))
         })
         it("should not tell us that the shader changed", () => {
           expect(res).to.be.false
