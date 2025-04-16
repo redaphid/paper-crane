@@ -1,5 +1,6 @@
-import { expect,} from "chai"
-import {make} from './PaperCrane.mjs'
+import { expect } from "chai"
+import { make } from './PaperCrane.mjs'
+import { getPixelColor, setupTestEnvironment, cleanupTestEnvironment, timeout } from './testHelpers.mjs'
 
 mocha.checkLeaks();
 mocha.setup("bdd")
@@ -7,28 +8,16 @@ const reporter = new URLSearchParams(window.location.search).get('reporter')
 if(reporter) mocha.reporter(reporter)
 
 const cranesContainer = document.getElementById("paper-cranes")
-const getPixelColor = (canvas, x, y) => {
-  const gl = canvas.getContext("webgl2")
-  const pixel = new Uint8Array(4)
-  const flippedY = canvas.height - y - 1
-  gl.readPixels(x, flippedY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
-  return pixel
-}
-const timeout = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
 describe("PaperCrane", () => {
     let render
     /** @type {HTMLCanvasElement} */
     let canvas
     beforeEach(async () => {
-      canvas = document.createElement("canvas")
-      cranesContainer.appendChild(canvas)
-      render = await make({ canvas })
+      ({ render, canvas } = await setupTestEnvironment())
     })
     afterEach(() => {
-      const image = render.cleanup()
-      // replace the canvas with the image
-      cranesContainer.removeChild(canvas)
-      cranesContainer.appendChild(image)
+      cleanupTestEnvironment(render, canvas)
     })
     it("should exist", () => {
       expect(render).to.exist

@@ -19,11 +19,6 @@ void main() {
     gl_Position = position;
 }`
 
-const defaultFragmentShader = `#version 300 es
-void main() {
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-}`
-
 // Simple full-screen quad
 const positions = [
     -1, -1, 0,

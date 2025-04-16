@@ -1,18 +1,19 @@
 // Add version and precision headers if not present
+/**
+ * @param {string} shader - The shader code to process
+ * @returns {string} - The processed shader code
+ */
 const addGlslVersion = shader => {
-    const lines = shader.split('\n').map(line => line.trim())
-    const needsVersion = !lines[0].startsWith('#version')
-    const hasPrecision = lines.some(line => line.startsWith('precision'))
+    const lines = shader.split('\n')
+    .map(line => line.trim())
+    .filter(line => line !== '#version 300 es')
+    .filter(line => !looksLikeAPrecisionLine(line))
 
-    // Apply modifications in sequence
-    const result = [
-        ...(needsVersion ? ['#version 300 es'] : []),
-        ...(needsVersion && !hasPrecision ? ['precision highp float;'] : []),
-        ...(!needsVersion && !hasPrecision ? ['precision highp float;'] : []),
-        ...lines.filter((_, i) => !(needsVersion && i === 0))
-    ]
+    return ["#version 300 es", "precision highp float;", ...lines].join('\n')
+}
 
-    return result.join('\n')
+const looksLikeAPrecisionLine = line => {
+    return line.startsWith('precision') && line.includes('float')
 }
 
 // Add main function wrapper for ShaderToy compatibility
