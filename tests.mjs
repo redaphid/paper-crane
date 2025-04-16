@@ -24,12 +24,12 @@ describe("PaperCrane", () => {
       cranesContainer.appendChild(canvas)
       render = await make({ canvas })
     })
-    // afterEach(() => {
-    //   const image = render.cleanup()
-    //   // replace the canvas with the image
-    //   cranesContainer.removeChild(canvas)
-    //   cranesContainer.appendChild(image)
-    // })
+    afterEach(() => {
+      const image = render.cleanup()
+      // replace the canvas with the image
+      cranesContainer.removeChild(canvas)
+      cranesContainer.appendChild(image)
+    })
     it("should exist", () => {
       expect(render).to.exist
     })
@@ -162,6 +162,19 @@ describe("PaperCrane", () => {
         })
       })
 
+    })
+    describe("When called with only a shader and it references iTime", () => {
+      beforeEach(() => {
+        render(`
+          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+            fragColor = vec4(0.0, sin(iTime), 0.0, 1.0);
+          }
+        `)
+      })
+      it("should be ok with it", () => {
+        const [red,green,blue,alpha] = getPixelColor(canvas, 0, 0)
+        expect(green).not.to.equal(0)
+      })
     })
     describe("When called with a shader and an initial image", () => {
       beforeEach(async () => {

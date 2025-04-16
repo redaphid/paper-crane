@@ -1,6 +1,6 @@
 // Add version and precision headers if not present
 const addGlslVersion = shader => {
-    const lines = shader.split('\n')
+    const lines = shader.split('\n').map(line => line.trim())
     const needsVersion = !lines[0].startsWith('#version')
     const hasPrecision = lines.some(line => line.startsWith('precision'))
 
@@ -351,6 +351,17 @@ float animateSmoothBounce(float t) {
     ].join('\n')
 }
 
+const addShaderToyCompatibilityByUsingDefines = (shader, features) => {
+    const lines = shader.split('\n')
+    lines.unshift('#define iTime time')
+    lines.unshift('#define iFrame frame')
+    lines.unshift('#define iResolution resolution')
+    lines.unshift('#define iMouse touch')
+    lines.unshift('#define iChannel0 initialFrame')
+    lines.unshift('#define iChannel1 prevFrame')
+    return lines.join('\n')
+}
+
 /**
  * Wraps a shader with necessary boilerplate, uniform declarations, and error markers
  * @param {string} shader - Raw shader code
@@ -360,10 +371,11 @@ float animateSmoothBounce(float t) {
 export const wrap = (shader, features = {}) =>
     // Apply transformations in sequence using functional composition
     [
-        s => addGlslVersion(s),
+        s => addShaderToyCompatibilityByUsingDefines(s, features),
         s => addUniforms(s, features),
         s => addBuiltins(s),
         s => insertMain(s),
+        s => addGlslVersion(s),
         s => addErrorMarker(s)
     ].reduce((current, fn) => fn(current), shader)
 
