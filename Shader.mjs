@@ -24,9 +24,8 @@ const insertMain = shader => {
         out vec4 fragColor;
         void main(void){
             vec2 uv = gl_FragCoord.xy / resolution.xy;
-            vec3 prevColor = rgb2hsl(getLastFrameColor(uv).rgb);
-            fragColor.rgb = render(uv, prevColor);
-            fragColor.rgb = hsl2rgb(fragColor.rgb);
+            vec3 prevColor = getLast(uv);
+            fragColor.rgb = hsl2rgb(render(uv, prevColor) );
             fragColor.a = 1.0;
         }`
     }
@@ -132,13 +131,6 @@ const addBuiltins = shader => {
 // Paper Cranes utility functions
 #define PAPER_CRANES 1
 
-vec4 getLastFrameColor(vec2 uv){
-    return texture(prevFrame, uv);
-}
-vec4 getInitialFrameColor(vec2 uv){
-    return texture(initialFrame, uv);
-}
-
 float random(vec2 st, float seed){
     st=vec2(st.x*cos(seed)-st.y*sin(seed),
     st.x*sin(seed)+st.y*cos(seed));
@@ -186,6 +178,7 @@ vec3 hsl2rgb(vec3 hsl) {
     );
 }
 
+
 vec3 rgb2hsl(vec3 c) {
     float maxColor = max(max(c.r, c.g), c.b);
     float minColor = min(min(c.r, c.g), c.b);
@@ -207,6 +200,14 @@ vec3 rgb2hsl(vec3 c) {
     }
 
     return vec3(h, s, l);
+}
+
+
+vec3 getLast(vec2 uv){
+    return rgb2hsl(texture(prevFrame, uv).rgb);
+}
+vec3 initial(vec2 uv){
+    return rgb2hsl(texture(initialFrame, uv).rgb);
 }
 
 vec2 centerUv(vec2 res, vec2 coord) {

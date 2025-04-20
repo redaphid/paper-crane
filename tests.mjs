@@ -126,8 +126,9 @@ describe("PaperCrane", () => {
     describe("When called with only a shader and it references time", () => {
       beforeEach(() => {
         render(`
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            fragColor = vec4(0.0, 0.0, sin(time), 1.0);
+          vec3 render(vec2 uv, vec3 last) {
+            vec3 blueish = rgb2hsl(vec3(0.0, 0.0, sin(time)));
+            return blueish;
           }
         `)
       })
@@ -158,8 +159,9 @@ describe("PaperCrane", () => {
     describe("When called with only a shader and it references iTime", () => {
       beforeEach(() => {
         render(`
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            fragColor = vec4(0.0, sin(iTime), 0.0, 1.0);
+          vec3 render(vec2 uv, vec3 last) {
+            vec3 greenish = rgb2hsl(vec3(0.0, sin(time), 0.0));
+            return greenish;
           }
         `)
       })
@@ -174,10 +176,9 @@ describe("PaperCrane", () => {
         render = await make({ canvas, initialImage: image });
 
         render({fragmentShader: `
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            vec2 uv = fragCoord.xy / resolution.xy;
-            vec3 color = getInitialFrameColor(uv).rgb;
-            fragColor = vec4(color, 1.0);
+          vec3 render(vec2 uv, vec3 last) {
+            vec3 color = initial(uv);
+            return color;
           }
         `
         })
@@ -190,31 +191,25 @@ describe("PaperCrane", () => {
         expect(blue).to.equal(0)
       })
     })
-    describe("When a shader uses getLastFrameColor, and inverts whatever color was in the last frame", () => {
+    describe("When a shader uses getLast, and inverts whatever color was in the last frame", () => {
       beforeEach(async () => {
         render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            vec2 uv = fragCoord.xy / resolution.xy;
-            vec3 color = getLastFrameColor(uv).rgb;
-            vec3 inverted = vec3(1.0 - color.r, 1.0 - color.g, 1.0 - color.b);
-            fragColor = vec4(inverted, 1.0);
+          vec3 render(vec2 uv, vec3 last) {
+            last.x = 0.5 - last.x;
+            return last;
           }
         `});
         render()
         })
         it("should render the center of the image green", () => {
-          const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+          const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
           // Check for red color (allow slight variations)
-          expect(red).to.equal(0)
-          expect(green).to.equal(255)
-          expect(blue).to.equal(255)
+          expect([red, green, blue]).to.deep.equal([0, 255, 255])
 
         })
         it("should render the edges of the image black", () => {
           const [red, green, blue] = getPixelColor(canvas, 0, 0)
-          expect(red).to.equal(0)
-          expect(green).to.equal(0)
-          expect(blue).to.equal(0)
+          expect([red, green, blue]).to.deep.equal([0, 0, 0])
         })
         describe("When render is called again", () => {
           beforeEach(() => {
