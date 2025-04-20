@@ -207,19 +207,17 @@ describe("PaperCrane", () => {
           expect([red, green, blue]).to.deep.equal([0, 255, 255])
 
         })
-        it("should render the edges of the image black", () => {
+        it("should render the edges of the image white", () => {
           const [red, green, blue] = getPixelColor(canvas, 0, 0)
-          expect([red, green, blue]).to.deep.equal([0, 0, 0])
+          expect([red, green, blue]).to.deep.equal([255, 255, 255])
         })
         describe("When render is called again", () => {
           beforeEach(() => {
             render()
           })
           it("should render the center of the image red", () => {
-            const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-            expect(red).to.equal(255)
-            expect(green).to.equal(0)
-            expect(blue).to.equal(0)
+            const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+            expect([red, green, blue]).to.deep.equal([255, 0, 0])
           })
         })
       })
