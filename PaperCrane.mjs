@@ -10,6 +10,8 @@ import {
     resizeFramebufferInfo,
 } from 'twgl'
 
+import {make as makeResolutionRatio} from './ResolutionRatioCalculator.mjs'
+
 import { wrap as wrapShader } from './Shader.mjs'
 import { wrap as wrapFeatures } from './Features.mjs'
 
@@ -173,8 +175,20 @@ export const make = async (deps) => { // Removed async as it's not used
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
     }
 
-    const resizeAll= () => {
-        const ratio = 1 // Or calculate based on performance if needed
+    let frameRenderTimes = []
+    let lastFrameTime = 0
+    const getRatio = (time) => {
+        frameRenderTimes.push(time - lastFrameTime)
+        lastFrameTime = time
+        if(frameRenderTimes.length < 20) return 1
+        if(frameRenderTimes.length > 20) frameRenderTimes.shift()
+        const averageFrameTime = frameRenderTimes.reduce((a, b) => a + b, 0) / frameRenderTimes.length
+        console.log({averageFrameTime: 1/(averageFrameTime * 16)})
+        return Math.min( 1 /(averageFrameTime * 16), 1)
+    }
+    const resizeAll= (time) => {
+        const ratio = getRatio(time)
+        console.log({ratio})
         const resized = resizeCanvasToDisplaySize(gl.canvas, ratio)
         // <<< RESTORE THIS >>> User requires FBOs to match canvas size for blit
         if (resized) { // Only resize FBOs if canvas actually resized
@@ -185,11 +199,11 @@ export const make = async (deps) => { // Removed async as it's not used
 
     let programInfo
     const render = (props) => {
-        resizeAll(); // Resize canvas/FBOs first
 
         let changedShader = false;
         const now = performance.now();
         const time = (now - startTime) / 1000;
+        resizeAll(time); // Resize canvas/FBOs first
 
         // 1. Parse props
         const { rawShader, features } = getShaderAndFeaturesFromProps(props, lastShader, previousFeatures);
