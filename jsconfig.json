@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ESNext",
+    "checkJs": false, // Enable type checking for .js files
+    "strict": false,
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ] // Include DOM types
+  },
+  "include": [
+    "**/*.mjs",
+    "**/*.js"
+  ], // Specify which files to include
+  "exclude": [
+    "node_modules"
+  ]
+}

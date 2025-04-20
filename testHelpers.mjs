@@ -40,7 +40,7 @@ export const setupTestEnvironment = async (options = {}) => {
 /**
  * Cleans up the test environment after a PaperCrane test.
  * Removes the canvas and replaces it with a static image capture.
- * @param {Function} render The render function returned by setupTestEnvironment.
+ * @param {Function & {cleanup: Function}} render The render function returned by setupTestEnvironment.
  * @param {HTMLCanvasElement} canvas The canvas element returned by setupTestEnvironment.
  */
 export const cleanupTestEnvironment = (render, canvas) => {
