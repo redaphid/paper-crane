@@ -22,7 +22,7 @@ describe("PaperCrane", () => {
     it("should exist", () => {
       expect(render).to.exist
     })
-    describe.only("When called with a red fragment shader", () => {
+    describe("When called with a red fragment shader", () => {
       beforeEach(() => {
         render({fragmentShader: `
           vec3 render(vec2 uv, vec3 last) {
@@ -57,8 +57,9 @@ describe("PaperCrane", () => {
     })
     describe("When called with a feature", () => {
       const shader = `
-      void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-        fragColor = vec4(0.0, 0.0, blue, 1.0);
+      vec3 render(vec2 uv, vec3 last) {
+        vec3 allBlue = rgb2hsl(vec3(0.0, 0.0, blue));
+        return allBlue;
       }
     `
       beforeEach(() => {
