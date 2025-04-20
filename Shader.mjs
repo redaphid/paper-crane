@@ -104,7 +104,7 @@ const addErrorMarker = shader => {
 
     // Find the first main function as insertion point
     const mainIndex = lines.findIndex(line =>
-        line.includes('void main(') || line.includes('void mainImage('))
+        line.includes('void main(') || line.includes('vec3 render('))
 
     if (mainIndex === -1) {
         // Fallback: insert after directives (version/precision)

@@ -8,8 +8,8 @@ describe("Features wrapping functionality", () => {
     // Use a generic shader that visualizes a feature named 'value'
     const testShader = `
         uniform float value; // Expect a float feature named 'value'
-        void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            fragColor = vec4(value, 0.0, 0.0, 1.0); // Output value as red component
+        vec3 render(vec2 uv, vec3 last) {
+            return rgb2hsl(vec3(value, 0.0, 0.0)); // Output value as red component
         }
     `;
 
