@@ -134,10 +134,7 @@ describe("PaperCrane", () => {
       })
       it("should increment the blue color by the time", () => {
         const [red,green,blue,alpha] = getPixelColor(canvas, 0, 0)
-        expect(blue).not.to.equal(0)
-        expect(blue).to.be.closeTo(55, 100)
-        expect(red).to.equal(0)
-        expect(green).to.equal(0)
+        expect([red,green,blue,alpha]).to.deep.equal([0,0,127,255])
       })
 
       describe("When we wait 10ms and call it again", () => {
@@ -184,14 +181,11 @@ describe("PaperCrane", () => {
         })
       })
       it("should render the center of the image red", () => {
-        const [red, green, blue, alpha] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-        // Check for exact red color
-        expect(red).to.equal(255)
-        expect(green).to.equal(0)
-        expect(blue).to.equal(0)
+        const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+        expect([red, green, blue]).to.deep.equal([255, 0, 0])
       })
     })
-    describe("When a shader uses getLast, and inverts whatever color was in the last frame", () => {
+    describe("When a shader inverts whatever color was in the last frame", () => {
       beforeEach(async () => {
         render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
           vec3 render(vec2 uv, vec3 last) {
@@ -203,8 +197,7 @@ describe("PaperCrane", () => {
         })
         it("should render the center of the image green", () => {
           const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-          // Check for red color (allow slight variations)
-          expect([red, green, blue]).to.deep.equal([0, 255, 255])
+          expect([red, green, blue]).to.deep.equal([0, 255, 0])
 
         })
         it("should render the edges of the image white", () => {
