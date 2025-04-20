@@ -227,6 +227,54 @@ describe("PaperCrane", () => {
           })
         })
       })
+      describe("When a shader inverts the brightness of the last frame", () => {
+        beforeEach(async () => {
+          render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
+            vec3 render(vec2 uv, vec3 last) {
+              last.z = 1. - last.z;
+              return last;
+            }
+          `});
+          render()
+          })
+          it("should render the edges of the image black", () => {
+            const [red, green, blue] = getPixelColor(canvas, 0, 0)
+            expect([red, green, blue]).to.deep.equal([0, 0, 0])
+          })
+          describe("When render is called again", () => {
+            beforeEach(() => {
+              render()
+            })
+            it("should render the center of the image red", () => {
+              const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+              expect([red, green, blue]).to.deep.equal([255, 0, 0])
+            })
+          })
+        })
+        describe("When a shader inverts the saturation of the last frame", () => {
+          beforeEach(async () => {
+            render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
+              vec3 render(vec2 uv, vec3 last) {
+                last.y = 1. - last.y;
+                return last;
+              }
+            `});
+            render()
+            })
+            it("should render center of the image white", () => {
+              const [red, green, blue] = getPixelColor(canvas, 0, 0)
+              expect([red, green, blue]).to.deep.equal([255, 255, 255])
+            })
+            describe("When render is called again", () => {
+              beforeEach(() => {
+                render()
+              })
+              it("should render the center of the image white", () => {
+                const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.width / 2)
+                expect([red, green, blue]).to.deep.equal([255, 255, 255])
+              })
+            })
+          })
       describe("when rendering has been slow for a while", () => {
         beforeEach(async () => {
           render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
