@@ -1,7 +1,8 @@
 import { expect } from "chai"
 import { setupTestEnvironment, cleanupTestEnvironment, getPixelColor } from './testHelpers.mjs';
 import wrap from './Features.mjs'; // Assuming this is the correct path
-
+mocha.checkLeaks()
+mocha.setup("bdd")
 describe("Features wrapping functionality", () => {
     let render, canvas, currentGetPixelColor;
 

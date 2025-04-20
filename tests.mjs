@@ -1,9 +1,12 @@
 import { expect } from "chai"
 import { make } from './PaperCrane.mjs'
 import { getPixelColor, setupTestEnvironment, cleanupTestEnvironment, timeout } from './testHelpers.mjs'
-
-mocha.checkLeaks();
+mocha.checkLeaks()
 mocha.setup("bdd")
+
+
+
+
 const reporter = new URLSearchParams(window.location.search).get('reporter')
 if(reporter) mocha.reporter(reporter)
 
@@ -124,6 +127,16 @@ describe("PaperCrane", () => {
       })
     })
     describe("When called with only a shader and it references time", () => {
+      let originalPerformance
+      let performanceNow
+      beforeEach(async () => {
+        originalPerformance = globalThis.performance
+        globalThis.performance = { now: () => 0 }
+        render = await make({ canvas })
+      });
+      afterEach(() => {
+        globalThis.performance = originalPerformance
+      });
       beforeEach(() => {
         render(`
           vec3 render(vec2 uv, vec3 last) {
@@ -133,18 +146,18 @@ describe("PaperCrane", () => {
         `)
       })
       it("should increment the blue color by the time", () => {
-        const [red,green,blue,alpha] = getPixelColor(canvas, 0, 0)
-        expect([red,green,blue,alpha]).to.deep.equal([0,0,127,255])
+        const [red,green,blue] = getPixelColor(canvas, 0, 0)
+        expect([red,green,blue]).to.deep.equal([0,0,0])
       })
 
-      describe("When we wait 10ms and call it again", () => {
+      describe("When we wait 16ms and call it again", () => {
         let changed
         beforeEach(async () => {
-          await timeout(10)
+          globalThis.performance = { now: () => 16 } // 16ms = 1 frame
           changed = render()
         })
         it("should render a different color", () => {
-          const [red, green, blue, alpha] = getPixelColor(canvas, 0, 0)
+          const [red, green, blue] = getPixelColor(canvas, 0, 0)
           expect(blue).to.be.greaterThan(1)
         })
         it("should not tell us that the shader changed", () => {
@@ -195,9 +208,9 @@ describe("PaperCrane", () => {
         `});
         render()
         })
-        it("should render the center of the image green", () => {
+        it("should render the center of the image teal", () => {
           const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
-          expect([red, green, blue]).to.deep.equal([0, 255, 0])
+          expect([red, green, blue]).to.deep.equal([0, 255,255])
 
         })
         it("should render the edges of the image white", () => {
@@ -212,6 +225,23 @@ describe("PaperCrane", () => {
             const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
             expect([red, green, blue]).to.deep.equal([255, 0, 0])
           })
+        })
+      })
+      describe("when rendering has been slow for a while", () => {
+        beforeEach(async () => {
+          render = await make({ canvas, initialImage: document.getElementById("initial-image"), fragmentShader: `
+            vec3 render(vec2 uv, vec3 last) {
+              return last;
+            }
+          `})
+          for(let i = 0; i < 20; i++) {
+            performance.now = () => i*100
+            render()
+          }
+        })
+        it("should have dropped the resolution of the canvas", () => {
+          const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.height / 2)
+          expect([red, green, blue]).to.deep.equal([255, 0, 0])
         })
       })
     })
