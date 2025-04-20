@@ -280,9 +280,9 @@ describe("PaperCrane", () => {
       beforeEach(() => {
         render();
       });
-      it("should render the center of the image white", () => {
+      it("should render the center of the image black", () => {
         const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.width / 2);
-        expect([red, green, blue]).to.deep.equal([255, 255, 255]);
+        expect([red, green, blue]).to.deep.equal([0, 0, 0]);
       });
     });
   });
@@ -358,7 +358,7 @@ describe("PaperCrane", () => {
       expect(canvas.width).to.be.greaterThan(0);
       expect(canvas.height).to.be.greaterThan(0);
     });
-    describe("when rendering has sped up for 20 frames", () => {
+    describe("when rendering has for 20 frames", () => {
       let previousWidth;
       let previousHeight;
       beforeEach(() => {
@@ -369,7 +369,7 @@ describe("PaperCrane", () => {
           render();
         }
       });
-      it("should not have changed the resolution of the canvas (yet)", () => {
+      it("should not have changed the resolution of the canvas", () => {
         expect(canvas.width).to.equal(previousWidth);
         expect(canvas.height).to.equal(previousHeight);
       });
