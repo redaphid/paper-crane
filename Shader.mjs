@@ -331,11 +331,8 @@ float animateEaseInOutElastic(float t) {
     t = pingpong(t);
     float t1 = t * 2.0;
     float t2 = t1 - 1.0;
-    if (t < 0.5) {
-        return -0.5 * pow(2.0, 10.0 * t2) * sin((t2 - 0.1125) * 13.962634015955);
-    } else {
-        return 0.5 * pow(2.0, -10.0 * t2) * sin((t2 - 0.1125) * 13.962634015955) + 1.0;
-    }
+    if (t < 0.5) return -0.5 * pow(2.0, 10.0 * t2) * sin((t2 - 0.1125) * 13.962634015955);
+    return 0.5 * pow(2.0, -10.0 * t2) * sin((t2 - 0.1125) * 13.962634015955) + 1.0;
 }
 
 float animateSmoothBounce(float t) {

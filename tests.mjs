@@ -128,10 +128,10 @@ describe("PaperCrane", () => {
           }
         `)
       })
-      it("should be ok with it", () => {
+      it("should increment the blue color by the time", () => {
         const [red,green,blue,alpha] = getPixelColor(canvas, 0, 0)
         expect(blue).not.to.equal(0)
-        expect(blue).to.be.closeTo(1, 10)
+        expect(blue).to.be.closeTo(55, 100)
         expect(red).to.equal(0)
         expect(green).to.equal(0)
       })
