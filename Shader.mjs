@@ -19,21 +19,15 @@ const looksLikeAPrecisionLine = line => {
 // Add main function wrapper for ShaderToy compatibility
 const insertMain = shader => {
     if (shader.includes('void main(')) return shader
-
-    if (shader.includes('void mainImage(')) {
-        return `${shader}
-        out vec4 fragColor;
-        void main(void){
-            mainImage(fragColor, gl_FragCoord.xy);
-        }`
-    }
-    if(shader.includes('vec4 render(vec2 uv,')) {
+    if(shader.includes('vec3 render(')) {
         return `${shader}
         out vec4 fragColor;
         void main(void){
             vec2 uv = gl_FragCoord.xy / resolution.xy;
-            vec4 prevColor = getLastFrameColor(uv);
-            fragColor = render(uv, prevColor);
+            vec3 prevColor = rgb2hsl(getLastFrameColor(uv).rgb);
+            fragColor.rgb = render(uv, prevColor);
+            fragColor.rgb = hsl2rgb(fragColor.rgb);
+            fragColor.a = 1.0;
         }`
     }
 

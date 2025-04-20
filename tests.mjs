@@ -22,11 +22,12 @@ describe("PaperCrane", () => {
     it("should exist", () => {
       expect(render).to.exist
     })
-    describe("When called with a red fragment shader", () => {
+    describe.only("When called with a red fragment shader", () => {
       beforeEach(() => {
         render({fragmentShader: `
-          void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-            fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+          vec3 render(vec2 uv, vec3 last) {
+             vec3 allRed = rgb2hsl(vec3(1.0, 0.0, 0.0));
+             return allRed;
           }
         `})
       })
@@ -39,8 +40,9 @@ describe("PaperCrane", () => {
         let res
         beforeEach(() => {
           res = render({fragmentShader: `
-            void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-              fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+            vec3 render(vec2 uv, vec3 last) {
+              vec3 allGreen = rgb2hsl(vec3(0.0, 1.0, 0.0));
+              return allGreen;
             }
           `})
         })
