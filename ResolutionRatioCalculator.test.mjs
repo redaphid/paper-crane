@@ -25,11 +25,48 @@ describe.only("ResolutionRatioCalculator", () => {
     describe("when called with a high time delta for 20 frames ", () => {
       let ratio;
       beforeEach(() => {
-        ratio = Array.from({ length: 20 }, () => calc(32)).at(-1);
+        ratio = Array.from({ length: 20 }, () => calc(33)).at(-1);
       });
-      it("should calculate the resolution ratio", () => {
-        expect(ratio).to.be.lessThan(1);
+      it("should raise the resolution ratio", () => {
+        expect(ratio).to.be.greaterThan(1);
       });
+
+      describe("when called with a low time delta for a frame", () => {
+        let oldRatio;
+        beforeEach(() => {
+          oldRatio = ratio;
+          ratio = calc(1);
+        });
+        it("should still keep the same resolution ratio", () => {
+          expect(ratio).to.equal(oldRatio);
+        });
+        describe("when called with a low time delta for 20 more frames", () => {
+          beforeEach(() => {
+            oldRatio = ratio;
+            for (let i = 0; i < 20; i++) {
+              ratio = calc(1);
+            }
+          });
+          it("should still keep the same resolution ratio", () => {
+            expect(ratio).to.equal(oldRatio);
+          });
+          describe("when called with a low time delta for 40 more frames", () => {
+            beforeEach(() => {
+              for (let i = 0; i < 40; i++) {
+                ratio = calc(1);
+              }
+            });
+            it("should have a lower resolution ratio", () => {
+              expect(ratio).to.be.lessThan(oldRatio);
+            });
+            it("should have a ratio higher than 1", () => {
+              expect(ratio).to.be.greaterThan(1);
+            });
+          });
+        });
+      });
+
+
     });
   });
 });
