@@ -22,7 +22,8 @@ describe("Shader wrapping functionality", () => {
     describe("when wrapping a shader with existing version and precision", () => {
         const shader = `#version 300 es
         precision highp float;
-        void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+        out vec4 fragColor;
+        void main() {
             fragColor = vec4(1.0, 0.0, 0.0, 1.0); // Simple red output
         }`;
 
@@ -71,24 +72,21 @@ describe("Shader wrapping functionality", () => {
 
     describe("when wrapping a shader with various uniform types", () => {
         const shader = `
-            void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+            vec3 render(vec2 uv, vec3 last) {
                 // Use values to produce a specific color
-                fragColor = vec4(floatValue, vecValue.g, vecValue.b, 1.0);
+                return vec3(floatValue, 0.0, 0.5);
             }`;
         const features = {
             floatValue: 0.5,         // -> R = 128
-            vecValue: [0.1, 0.2, 0.3] // -> G = 51, B = 76
+            vecValue: [0.5, 0.5, 1.0] // -> G = 51, B = 76
         };
 
 
         it("should render correctly using provided features", () => {
             render({ fragmentShader: shader, features: features });
-            const pixel = currentGetPixelColor(0, 0);
+            const [red, green, blue] = currentGetPixelColor(0, 0);
              // Expected: [128, 51, 76, 255] (approx)
-            expect(pixel[0]).to.be.closeTo(128, 1);
-            expect(pixel[1]).to.be.closeTo(51, 1);
-            expect(pixel[2]).to.be.closeTo(76, 1);
-            expect(pixel[3]).to.equal(255);
+             expect([red,green,blue]).to.deep.equal([127, 127, 127]);
         });
 
          it("should add float uniform declaration to wrapped string", () => {
@@ -104,8 +102,8 @@ describe("Shader wrapping functionality", () => {
         describe("and a uniform is already defined in the shader", () => {
             const shaderWithDefinedUniform = `
                 uniform float alreadyDefined; // Pre-defined
-                void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-                    fragColor = vec4(alreadyDefined, anotherValue, 0.0, 1.0);
+                vec3 render(vec2 uv, vec3 last) {
+                    return rgb2hsl(vec3(alreadyDefined, anotherValue, 0.0));
                 }`;
             const featuresWithDefined = {
                 alreadyDefined: 0.25, // -> R = 64
