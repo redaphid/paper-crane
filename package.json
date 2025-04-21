@@ -12,6 +12,7 @@
   "devDependencies": {
     "@playwright/test": "^1.51.1",
     "live-server": "^1.2.2",
-    "playwright": "^1.51.1"
+    "playwright": "^1.51.1",
+    "st": "^3.0.1"
   }
 }

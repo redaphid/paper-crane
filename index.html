@@ -59,9 +59,22 @@
 	<img id="initial-image" src="red-circle.png" />
 </body>
 
+<script type="module">
+
+	const reporter = new URLSearchParams(window.location.search).get("reporter");
+	mocha.setup("bdd");
+	mocha.checkLeaks();
+	if (reporter) mocha.reporter(reporter);
+
+</script>
 <script src="./tests.mjs" type="module"></script>
-<script src="./Shader.test.mjs" type="module"></script>
-<script src="./Features.test.mjs" type="module"></script>
-<script src="./ResolutionRatioCalculator.test.mjs" type="module"></script>
+<script type="module" src="./Shader.test.mjs"></script>
+<script type="module" src="./Features.test.mjs"></script>
+<script type="module" src="./ResolutionRatioCalculator.test.mjs"></script>
+
+
+<script type="module">
+	mocha.run(() => window.testsFinished = mocha)
+</script>
 
 </html>

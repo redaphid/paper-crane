@@ -97,10 +97,6 @@ describe("ResolutionRatioCalculator", () => {
     });
 
     it("should recover faster with a higher recovery factor", () => {
-      console.log({
-        ratio,
-        oldRatio
-      });
       expect(ratio).to.be.lessThan(oldRatio);
     });
   });

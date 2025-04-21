@@ -1,11 +1,6 @@
 import { expect } from "chai";
 import { make } from "./PaperCrane.mjs";
 import { getPixelColor, setupTestEnvironment, cleanupTestEnvironment, timeout } from "./testHelpers.mjs";
-mocha.checkLeaks();
-mocha.setup("bdd");
-
-const reporter = new URLSearchParams(window.location.search).get("reporter");
-if (reporter) mocha.reporter(reporter);
 
 const cranesContainer = document.getElementById("paper-cranes");
 
@@ -165,7 +160,7 @@ describe("PaperCrane", () => {
       });
     });
   });
-  describe("When called with only a shader and it references iTime", () => {
+  describe("When called with only a shader and it references time", () => {
     beforeEach(() => {
       render(`
           vec3 render(vec2 uv, vec3 last) {
@@ -376,5 +371,3 @@ describe("PaperCrane", () => {
     });
   });
 });
-
-mocha.run(() => (window.testsFinished = true));

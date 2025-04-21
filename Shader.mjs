@@ -346,18 +346,6 @@ float animateSmoothBounce(float t) {
         ...lines.slice(uniformEnd)
     ].join('\n')
 }
-
-const addShaderToyCompatibilityByUsingDefines = (shader, features) => {
-    const lines = shader.split('\n')
-    lines.unshift('#define iTime time')
-    lines.unshift('#define iFrame frame')
-    lines.unshift('#define iResolution resolution')
-    lines.unshift('#define iMouse touch')
-    lines.unshift('#define iChannel0 initialFrame')
-    lines.unshift('#define iChannel1 prevFrame')
-    return lines.join('\n')
-}
-
 /**
  * Wraps a shader with necessary boilerplate, uniform declarations, and error markers
  * @param {string} shader - Raw shader code
@@ -367,7 +355,6 @@ const addShaderToyCompatibilityByUsingDefines = (shader, features) => {
 export const wrap = (shader, features = {}) =>
     // Apply transformations in sequence using functional composition
     [
-        s => addShaderToyCompatibilityByUsingDefines(s, features),
         s => addUniforms(s, features),
         s => addBuiltins(s),
         s => insertMain(s),
