@@ -4,10 +4,10 @@
   "description": "To install dependencies:",
   "main": "index.mjs",
   "scripts": {
-    "test": "playwright test",
+    "test": "node run-tests.mjs",
     "start": "live-server --port=7355"
   },
-  "author": "",
+  "author": "hypnodroid <iam@hypnodroid.com>",
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.51.1",
