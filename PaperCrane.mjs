@@ -274,3 +274,4 @@ export const make = async (deps) => { // Removed async as it's not used
     }
     return render
 }
+export default make
