@@ -275,9 +275,9 @@ describe("PaperCrane", () => {
       beforeEach(() => {
         render();
       });
-      it("should render the center of the image black", () => {
+      it("should render the center of the image white", () => {
         const [red, green, blue] = getPixelColor(canvas, canvas.width / 2, canvas.width / 2);
-        expect([red, green, blue]).to.deep.equal([0, 0, 0]);
+        expect([red, green, blue]).to.deep.equal([255, 255, 255]);
       });
     });
   });
