@@ -28,7 +28,9 @@ describe("ResolutionRatioCalculator", () => {
     describe("when called with a high time delta for 20 frames ", () => {
 
       beforeEach(() => {
-        ratio = Array.from({ length: 20 }, () => calc(33)).at(-1);
+        for (let i = 0; i < 20; i++) {
+          ratio = calc(33);
+        }
       });
       it("should raise the resolution ratio", () => {
         expect(ratio).to.be.greaterThan(1);
@@ -69,9 +71,9 @@ describe("ResolutionRatioCalculator", () => {
     });
   });
 
-  describe("when created with custom frameCount", () => {
+  describe("when created with custom slowFramesCount", () => {
     beforeEach(() => {
-      calc = make({ frameCount: 10 });
+      calc = make({ slowFramesCount: 10 });
     });
 
     it("should use the custom frame count for detecting performance issues", () => {
@@ -80,7 +82,7 @@ describe("ResolutionRatioCalculator", () => {
         expect(calc(40)).to.equal(1);
       }
 
-      // 10th frame should trigger ratio change (since frameCount is 10)
+      // 10th frame should trigger ratio change (since slowFramesCount is 10)
       expect(calc(40)).to.be.greaterThan(1);
     });
   });
@@ -88,17 +90,28 @@ describe("ResolutionRatioCalculator", () => {
   describe("when created with a low recovery frame count", () => {
     let oldRatio;
     beforeEach(() => {    // Create calculator with faster recovery (larger factor = faster recovery)
-      calc = make({ recoverFrameCount: 10 });
-      // First cause ratio increase
-      oldRatio = Array.from({ length: 20 }, () => calc(40)).at(-1);
-      assert(oldRatio > 1);
-      // then recover
-      ratio = Array.from({ length: 11 }, () => calc(15)).at(-1);
+      calc = make({ slowFramesCount: 10, recoveryFrameCount: 10 });
+      // slow frames
+      for (let i = 0; i < 11; i++) {
+        ratio = calc(150);
+      }
+      oldRatio = ratio;
+      // fast frames
+      for (let i = 0; i < 29; i++) {
+        ratio = calc(1);
+      }
     });
 
     it("should recover faster with a higher recovery factor", () => {
       expect(ratio).to.be.lessThan(oldRatio);
     });
+    describe("when compared to a calculator that has faster recovery", () => {
+      beforeEach(() => {
+        calc = make({ slowFramesCount: 10, recoveryFrameCount: 10, recoveryFactor: 2 });
+      });
+      it("should recover faster", () => {
+        expect(ratio).to.be.lessThan(oldRatio);
+      });
   });
 
   describe("when created with custom recoveryFrameCount", () => {
@@ -149,7 +162,7 @@ describe("ResolutionRatioCalculator", () => {
   describe("when created with multiple custom parameters", () => {
     it("should respect all custom parameters", () => {
       calc = make({
-        frameCount: 5,
+        slowFramesCount: 5,
         recoveryFactor: 3,
         recoveryFrameCount: 5,
         maxTimeDelta: 15

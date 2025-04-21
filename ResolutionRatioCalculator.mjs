@@ -1,21 +1,21 @@
 /**
  * @param {Object} options
- * @param {number} options.frameCount - The number of frames to average for degradation detection.
+ * @param {number} options.slowFramesCount - The number of frames to average for degradation detection.
  * @param {number} options.recoveryFactor - The factor by which the ratio is reduced during recovery.
  * @param {number} options.recoveryFrameCount - The number of consecutive good frames needed for recovery.
  * @param {number} options.maxTimeDelta - The maximum average time delta allowed before degrading.
  */
-export const make = ({ frameCount = 20, recoveryFactor = 1.1, recoveryFrameCount = 20, maxTimeDelta = 32 } = {}) => {
+export const make = ({ slowFramesCount = 20, recoveryFactor = 1.1, recoveryFrameCount = 20, maxTimeDelta = 32 } = {}) => {
   let frameTimes = [];
   let ratio = 1;
   let goodFrameCount = 0;
 
   return (timeDelta) => {
     frameTimes.push(timeDelta);
-    if (frameTimes.length < frameCount) return ratio;
+    if (frameTimes.length < slowFramesCount) return ratio;
 
-    if (frameTimes.length > frameCount) frameTimes.shift();
-    const avgDelta = frameTimes.reduce((sum, delta) => sum + delta, 0) / frameCount;
+    if (frameTimes.length > slowFramesCount) frameTimes.shift();
+    const avgDelta = frameTimes.reduce((sum, delta) => sum + delta, 0) / slowFramesCount;
 
     if (avgDelta > maxTimeDelta) {
       ratio *= 1.5;
