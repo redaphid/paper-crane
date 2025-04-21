@@ -183,12 +183,12 @@ export const make = async (deps) => { // Removed async as it's not used
         if(frameRenderTimes.length < 20) return 1
         if(frameRenderTimes.length > 20) frameRenderTimes.shift()
         const averageFrameTime = frameRenderTimes.reduce((a, b) => a + b, 0) / frameRenderTimes.length
-        console.log({averageFrameTime: 1/(averageFrameTime * 16)})
+        console.debug({averageFrameTime: 1/(averageFrameTime * 16)})
         return Math.min( 1 /(averageFrameTime * 16), 1)
     }
     const resizeAll= (time) => {
         const ratio = getRatio(time)
-        console.log({ratio})
+        console.debug({ratio})
         const resized = resizeCanvasToDisplaySize(gl.canvas, ratio)
         // <<< RESTORE THIS >>> User requires FBOs to match canvas size for blit
         if (resized) { // Only resize FBOs if canvas actually resized

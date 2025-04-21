@@ -23,7 +23,10 @@ const runTests = async () => {
   const server = await startServer();
   const browser = await chromium.launch({ headless: false });
   const page = await browser.newPage();
-  page.on('console', msg => console.log(msg.text().replaceAll('%s','').replaceAll('%d','').replaceAll('%c','')));
+  page.on('console', msg =>  {
+    // if the console was from a console.debug, don't log it
+    console.log(msg.text().replaceAll('%s','').replaceAll('%d','').replaceAll('%c',''))
+  })
   page.on('pageerror', err => console.error('PAGE ERROR:', err));
 
   await page.goto(`http://localhost:${PORT}?reporter=spec`);
