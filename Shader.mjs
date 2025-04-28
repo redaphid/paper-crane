@@ -30,7 +30,7 @@ const insertMain = shader => {
         }`
     }
 
-    throw new Error(`No mainImage or main function found in shader`)
+    throw new Error(`No render or main function found in shader`)
 }
 
 // Returns whether a given uniform is already declared in the shader
