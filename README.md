@@ -21,15 +21,8 @@ const canvas = document.getElementById("myCanvas");
 const initialImage = document.getElementById("myImage"); // Optional
 
 const fragmentShader = `
-  precision mediump float;
-  uniform vec2 u_resolution;
-  uniform float u_time;
-  uniform sampler2D u_texture; // Previous frame or initial image
-
-  void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-    // Example: Simple color cycling based on time
-    gl_FragColor = vec4(0.5 + 0.5 * cos(u_time + uv.xyx + vec3(0,2,4)), 1.0);
+  vec3 render(vec2 uv, vec3 last) {
+    return vec3(sin(time), cos(time), 0.0);
   }
 `;
 
@@ -52,10 +45,11 @@ setup();
 
 The library automatically provides the following uniforms to your fragment shader:
 
-- `uniform vec2 u_resolution;`: The current resolution of the rendering buffer.
-- `uniform float u_time;`: Time in seconds since initialization.
-- `uniform int u_frame;`: The current frame number.
-- `uniform sampler2D u_texture;`: The texture from the previous frame (or the initial image on the first frame).
+- `uniform vec2 resolution;`: The current resolution of the rendering buffer.
+- `uniform float time;`: Time in seconds since initialization.
+- `uniform int frame;`: The current frame number.
+- `uniform sampler2D prevFrame;`: The texture from the previous frame (or the initial image on the first frame).
+- a suite of animation functions
 
 You can pass additional uniforms or update the shader/features by passing an object to the `render` function.
 
