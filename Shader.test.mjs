@@ -84,8 +84,9 @@ describe("Shader wrapping functionality", () => {
     it("should render correctly using provided features", () => {
       render({ fragmentShader: shader, features: features });
       const [red, green, blue] = currentGetPixelColor(0, 0);
-      // Expected: [128, 51, 76, 255] (approx)
-      expect([red, green, blue]).to.deep.equal([127, 127, 127]);
+      expect(red).to.be.closeTo(128, 1);
+      expect(green).to.be.closeTo(128, 1);
+      expect(blue).to.be.closeTo(128, 1);
     });
 
     it("should add float uniform declaration to wrapped string", () => {

@@ -23,10 +23,8 @@ describe("ResolutionRatioCalculator", () => {
       it("should calculate the resolution ratio", () => {
         expect(calc(32)).to.equal(1);
       });
-
     });
     describe("when called with a high time delta for 20 frames ", () => {
-
       beforeEach(() => {
         for (let i = 0; i < 20; i++) {
           ratio = calc(33);
@@ -89,7 +87,8 @@ describe("ResolutionRatioCalculator", () => {
 
   describe("when created with a low recovery frame count", () => {
     let oldRatio;
-    beforeEach(() => {    // Create calculator with faster recovery (larger factor = faster recovery)
+    beforeEach(() => {
+      // Create calculator with faster recovery (larger factor = faster recovery)
       calc = make({ slowFramesCount: 10, recoveryFrameCount: 10 });
       // slow frames
       for (let i = 0; i < 11; i++) {
@@ -112,78 +111,79 @@ describe("ResolutionRatioCalculator", () => {
       it("should recover faster", () => {
         expect(ratio).to.be.lessThan(oldRatio);
       });
-  });
-
-  describe("when created with custom recoveryFrameCount", () => {
-    beforeEach(() => {
-      // Create calculator with faster recovery time (fewer frames needed)
-      calc = make({ recoveryFrameCount: 10 });
     });
 
-    it("should recover after specified number of good frames", () => {
-      // First cause ratio increase
-      let ratio = Array.from({ length: 20 }, () => calc(40)).at(-1);
-      const highRatio = ratio;
-
-      // Then only need 10 good frames to improve
-      for (let i = 0; i < 9; i++) {
-        ratio = calc(10);
-        expect(ratio).to.equal(highRatio);
-      }
-
-      // 10th frame should trigger improvement
-      ratio = calc(10);
-      expect(ratio).to.be.lessThan(highRatio);
-    });
-  });
-
-  describe("when created with custom maxTimeDelta", () => {
-    beforeEach(() => {
-      // Create calculator with lower threshold for "bad" frames
-      calc = make({ maxTimeDelta: 20 });
-    });
-
-    it("should detect performance issues at the specified threshold", () => {
-      // First 19 frames with delta=21 (just above maxTimeDelta)
-      for (let i = 0; i < 19; i++) {
-        expect(calc(21)).to.equal(1);
-      }
-
-      // 20th frame should trigger ratio increase
-      expect(calc(21)).to.be.greaterThan(1);
-
-      // With default settings, this wouldn't trigger an increase
-      const defaultCalc = make();
-      const defaultRatio = Array.from({ length: 20 }, () => defaultCalc(21)).at(-1);
-      expect(defaultRatio).to.equal(1);
-    });
-  });
-
-  describe("when created with multiple custom parameters", () => {
-    it("should respect all custom parameters", () => {
-      calc = make({
-        slowFramesCount: 5,
-        recoveryFactor: 3,
-        recoveryFrameCount: 5,
-        maxTimeDelta: 15
+    describe("when created with custom recoveryFrameCount", () => {
+      beforeEach(() => {
+        // Create calculator with faster recovery time (fewer frames needed)
+        calc = make({ recoveryFrameCount: 10 });
       });
 
-      // Should increase ratio after 5 bad frames
-      for (let i = 0; i < 4; i++) {
-        expect(calc(16)).to.equal(1);
-      }
-      const highRatio = calc(16);
-      expect(highRatio).to.be.greaterThan(1);
+      it("should recover after specified number of good frames", () => {
+        // First cause ratio increase
+        let ratio = Array.from({ length: 20 }, () => calc(40)).at(-1);
+        const highRatio = ratio;
 
-      // Should recover after 5 good frames
-      for (let i = 0; i < 4; i++) {
-        calc(10);
-      }
-      const newRatio = calc(10);
+        // Then only need 10 good frames to improve
+        for (let i = 0; i < 9; i++) {
+          ratio = calc(10);
+          expect(ratio).to.equal(highRatio);
+        }
 
-      // Should recover significantly due to high recoveryFactor
-      expect(newRatio).to.be.lessThan(highRatio);
-      expect(newRatio).to.be.closeTo(highRatio / 3, 0.01);
+        // 10th frame should trigger improvement
+        ratio = calc(10);
+        expect(ratio).to.be.lessThan(highRatio);
+      });
+    });
+
+    describe("when created with custom maxTimeDelta", () => {
+      beforeEach(() => {
+        // Create calculator with lower threshold for "bad" frames
+        calc = make({ maxTimeDelta: 20 });
+      });
+
+      it("should detect performance issues at the specified threshold", () => {
+        // First 19 frames with delta=21 (just above maxTimeDelta)
+        for (let i = 0; i < 19; i++) {
+          expect(calc(21)).to.equal(1);
+        }
+
+        // 20th frame should trigger ratio increase
+        expect(calc(21)).to.be.greaterThan(1);
+
+        // With default settings, this wouldn't trigger an increase
+        const defaultCalc = make();
+        const defaultRatio = Array.from({ length: 20 }, () => defaultCalc(21)).at(-1);
+        expect(defaultRatio).to.equal(1);
+      });
+    });
+
+    describe("when created with multiple custom parameters", () => {
+      it("should respect all custom parameters", () => {
+        calc = make({
+          slowFramesCount: 5,
+          recoveryFactor: 3,
+          recoveryFrameCount: 5,
+          maxTimeDelta: 15,
+        });
+
+        // Should increase ratio after 5 bad frames
+        for (let i = 0; i < 4; i++) {
+          expect(calc(16)).to.equal(1);
+        }
+        const highRatio = calc(16);
+        expect(highRatio).to.be.greaterThan(1);
+
+        // Should recover after 5 good frames
+        for (let i = 0; i < 4; i++) {
+          calc(10);
+        }
+        const newRatio = calc(10);
+
+        // Should recover significantly due to high recoveryFactor
+        expect(newRatio).to.be.lessThan(highRatio);
+        expect(newRatio).to.be.closeTo(highRatio / 3, 0.01);
+      });
     });
   });
 });

@@ -21,7 +21,7 @@ return new Promise((resolve, reject) => {
 
 const runTests = async () => {
   const server = await startServer();
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   page.on('console', msg =>  {
     // if the console was from a console.debug, don't log it

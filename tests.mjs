@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { make } from ".";
+import { make } from "./Wish.mjs";
 import { getPixelColor, setupTestEnvironment, cleanupTestEnvironment, timeout } from "./testHelpers.mjs";
 
 const cranesContainer = document.getElementById("wishes");
@@ -65,7 +65,11 @@ describe("Wish", () => {
     });
     it("should render a blue square", () => {
       const pixel = getPixelColor(canvas, 0, 0);
-      expect(pixel).to.deep.equal(new Uint8Array([0, 0, 127, 255]));
+      const [r, g, b, a] = pixel;
+      expect(r).to.equal(0);
+      expect(g).to.equal(0);
+      expect(b).to.be.closeTo(128, 1);
+      expect(a).to.equal(255);
     });
     describe("When called and that feature changes", () => {
       let res;
@@ -75,7 +79,11 @@ describe("Wish", () => {
       });
       it("should render a blue square", () => {
         const pixel = getPixelColor(canvas, 0, 0);
-        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 255, 255]));
+        const [r, g, b, a] = pixel;
+        expect(r).to.equal(0);
+        expect(g).to.equal(0);
+        expect(b).to.equal(255);
+        expect(a).to.equal(255);
       });
       it("should not tell us that the shader changed", () => {
         expect(res).to.be.false;
@@ -88,7 +96,11 @@ describe("Wish", () => {
       });
       it("should be fine with it", () => {
         const pixel = getPixelColor(canvas, 0, 0);
-        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 64, 255]));
+        const [r, g, b, a] = pixel;
+        expect(r).to.equal(0);
+        expect(g).to.equal(0);
+        expect(b).to.equal(64);
+        expect(a).to.equal(255);
       });
       it("should not tell us that the shader changed", () => {
         expect(res).to.be.false;
@@ -101,7 +113,11 @@ describe("Wish", () => {
       });
       it("should be fine with it", () => {
         const pixel = getPixelColor(canvas, 0, 0);
-        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 127, 255]));
+        const [r, g, b, a] = pixel;
+        expect(r).to.equal(0);
+        expect(g).to.equal(0);
+        expect(b).to.be.closeTo(128, 1);
+        expect(a).to.equal(255);
       });
       it("should not tell us that the shader changed", () => {
         expect(res).to.be.false;
@@ -114,7 +130,11 @@ describe("Wish", () => {
       });
       it("should render a blue square", () => {
         const pixel = getPixelColor(canvas, 0, 0);
-        expect(pixel).to.deep.equal(new Uint8Array([0, 0, 127, 255]));
+        const [r, g, b, a] = pixel;
+        expect(r).to.equal(0);
+        expect(g).to.equal(0);
+        expect(b).to.be.closeTo(128, 1);
+        expect(a).to.equal(255);
       });
       it("should not tell us that the shader changed", () => {
         expect(res).to.be.false;

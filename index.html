@@ -9,8 +9,7 @@
 				"preact": "https://esm.sh/preact@10.26.0",
 				"htm": "https://esm.sh/htm@3.1.1",
 				"chai": "https://esm.sh/chai@5.2.0",
-				"twgl": "https://esm.sh/twgl.js@5.5.3",
-				"zod": "https://esm.sh/zod@3.24.2"
+				"twgl": "https://esm.sh/twgl.js@5.5.3"
 			}
 		}
 	</script>
@@ -74,7 +73,10 @@
 
 
 <script type="module">
-	mocha.run(() => window.testsFinished = mocha)
+	mocha.run((e) => {
+		console.log(e)
+		window.testsFinished = mocha
+	})
 </script>
 
 </html>

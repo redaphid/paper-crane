@@ -9,7 +9,7 @@
   },
   "author": "hypnodroid <iam@hypnodroid.com>",
   "dependencies": {
-    "twgl": "@5.5.3"
+    "twgl.js": "^5.5.4"
   },
   "license": "MIT",
   "type": "module",
