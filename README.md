@@ -15,30 +15,20 @@ It also exposes a `compile` function that allows you to code glsl shaders in a s
 Import the `make` function and provide a canvas element, an optional initial image, and your fragment shader source.
 
 ```javascript
-import { make } from "@zuru/wish";
-
-const canvas = document.getElementById("myCanvas");
-const initialImage = document.getElementById("myImage"); // Optional
-
-const fragmentShader = `
-  vec3 render(vec2 uv, vec3 last) {
-    return vec3(sin(time), cos(time), 0.0);
-  }
-`;
-
-async function setup() {
-  const render = await make({ canvas, initialImage, fragmentShader });
-
-  function animate(time) {
-    // Optional: Pass props to update uniforms or shader features
-    const props = { time: time * 0.001 };
-    render(props);
-    requestAnimationFrame(animate);
-  }
-  requestAnimationFrame(animate);
-}
-
-setup();
+const { make } = await import("./Wish.mjs");
+const canvas = document.getElementById("canvas");
+const render = await make({
+  canvas,
+  fragmentShader: `
+      vec3 render(vec2 uv, vec3 last) {
+        return vec3(uv.x, 0.5, uv.y);
+      }
+    `,
+});
+requestAnimationFrame(() => {
+  requestAnimationFrame(render);
+  render();
+});
 ```
 
 ### Provided Uniforms
@@ -50,6 +40,7 @@ The library automatically provides the following uniforms to your fragment shade
 - `uniform int frame;`: The current frame number.
 - `uniform sampler2D prevFrame;`: The texture from the previous frame (or the initial image on the first frame).
 - a suite of animation functions
+- hsl color functions
 
 You can pass additional uniforms or update the shader/features by passing an object to the `render` function.
 
@@ -61,7 +52,7 @@ You can pass additional uniforms or update the shader/features by passing an obj
 npm start
 ```
 
-This will start a local server (usually at `http://localhost:7355`) serving `index.html` or `demo.html`.
+This will start a local server (usually at `http://localhost:7355`) serving `index.html` and `demo.html`.
 
 ### Running Tests
 
