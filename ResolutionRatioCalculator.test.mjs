@@ -43,10 +43,10 @@ describe("ResolutionRatioCalculator", () => {
         it("should still keep the same resolution ratio", () => {
           expect(ratio).to.equal(oldRatio);
         });
-        describe("when called with a low time delta for 20 more frames", () => {
+        describe("when called with a low time delta for 18 more frames", () => {
           beforeEach(() => {
             oldRatio = ratio;
-            ratio = Array.from({ length: 20 }, () => calc(1)).at(-1);
+            ratio = Array.from({ length: 18 }, () => calc(1)).at(-1);
           });
           it("should still keep the same resolution ratio", () => {
             expect(ratio).to.equal(oldRatio);

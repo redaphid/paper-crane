@@ -11,29 +11,36 @@ export const make = ({ slowFramesCount = 20, recoveryFactor = 1.1, recoveryFrame
   let goodFrameCount = 0;
 
   return (timeDelta) => {
-    frameTimes.push(timeDelta);
-    if (frameTimes.length < slowFramesCount) return ratio;
+    // Track good frames based on individual timeDelta
+    if (timeDelta > maxTimeDelta) goodFrameCount = 0;
+    if (timeDelta <= maxTimeDelta) goodFrameCount++;
 
+    // Check for recovery first
+    if (goodFrameCount >= recoveryFrameCount && ratio > 1) {
+      ratio = ratio / recoveryFactor;
+      goodFrameCount = 0;
+      frameTimes = [];
+      return ratio;
+    }
+
+    // Add frame time for degradation check
+    frameTimes.push(timeDelta);
+
+    // Only check for degradation if buffer is full
+    if (frameTimes.length < slowFramesCount) return ratio;
     if (frameTimes.length > slowFramesCount) frameTimes.shift();
+
     const avgDelta = frameTimes.reduce((sum, delta) => sum + delta, 0) / slowFramesCount;
 
     if (avgDelta > maxTimeDelta) {
       ratio *= 1.5;
       frameTimes = []; // Reset frames on degradation
-      goodFrameCount = 0;
+      goodFrameCount = 0; // Reset good frames count on degradation
       return ratio;
     }
 
-    // If avgDelta is acceptable, increment good frame count
-    goodFrameCount = Math.min(goodFrameCount + 1, recoveryFrameCount);
-
-    // Check if enough consecutive good frames have occurred for recovery
-    if (goodFrameCount !== recoveryFrameCount) return ratio;
-
-    // Recover: reduce ratio and reset counters
-    ratio = Math.max(1, ratio / recoveryFactor);
-    frameTimes = []; // Reset frames after successful recovery check
-    goodFrameCount = 0;
+    // If degradation didn't happen, and recovery didn't happen, return current ratio.
+    // Good frame count logic is now handled at the beginning.
     return ratio;
   };
 };
