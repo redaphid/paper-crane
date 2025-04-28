@@ -8,7 +8,7 @@ import {
     setUniforms,
     drawBufferInfo,
     resizeFramebufferInfo,
-} from 'twgl'
+} from 'twgl.js'
 
 import {make as makeResolutionRatio} from './ResolutionRatioCalculator.mjs'
 
