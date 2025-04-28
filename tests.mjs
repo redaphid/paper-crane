@@ -48,9 +48,6 @@ describe("Wish", () => {
         const pixel = getPixelColor(canvas, 0, 0);
         expect(pixel).to.deep.equal(new Uint8Array([0, 255, 0, 255]));
       });
-      it("should tell us that the shader changed", () => {
-        expect(res).to.be.true;
-      });
     });
   });
   describe("When called with a feature", () => {
@@ -85,9 +82,6 @@ describe("Wish", () => {
         expect(b).to.equal(255);
         expect(a).to.equal(255);
       });
-      it("should not tell us that the shader changed", () => {
-        expect(res).to.be.false;
-      });
     });
     describe("When called without a shader the next time", () => {
       let res;
@@ -101,9 +95,6 @@ describe("Wish", () => {
         expect(g).to.equal(0);
         expect(b).to.equal(64);
         expect(a).to.equal(255);
-      });
-      it("should not tell us that the shader changed", () => {
-        expect(res).to.be.false;
       });
     });
     describe("When called with the same shader string as the last time but without features", () => {
@@ -119,9 +110,6 @@ describe("Wish", () => {
         expect(b).to.be.closeTo(128, 1);
         expect(a).to.equal(255);
       });
-      it("should not tell us that the shader changed", () => {
-        expect(res).to.be.false;
-      });
     });
     describe("When called without any arguments", () => {
       let res;
@@ -135,9 +123,6 @@ describe("Wish", () => {
         expect(g).to.equal(0);
         expect(b).to.be.closeTo(128, 1);
         expect(a).to.equal(255);
-      });
-      it("should not tell us that the shader changed", () => {
-        expect(res).to.be.false;
       });
     });
   });
@@ -174,9 +159,6 @@ describe("Wish", () => {
       it("should render a different color", () => {
         const [red, green, blue] = getPixelColor(canvas, 0, 0);
         expect(blue).to.be.greaterThan(1);
-      });
-      it("should not tell us that the shader changed", () => {
-        expect(changed).to.be.false;
       });
     });
   });

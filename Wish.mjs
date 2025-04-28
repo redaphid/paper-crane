@@ -277,7 +277,7 @@ export const make = async (deps) => { // Removed async as it's not used
         // Update features for next time
         previousFeatures = {...features};
 
-        return changedShader;
+        return frameBuffers[1].attachments[0]
     }
 
     // Cleanup logic extracted
