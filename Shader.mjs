@@ -352,7 +352,7 @@ float animateSmoothBounce(float t) {
  * @param {Record<string, any>} features - Uniform values to be declared
  * @returns {string} - Wrapped and processed shader code
  */
-export const wrap = (shader, features = {}) =>
+export const compile = (shader, features = {}) =>
     // Apply transformations in sequence using functional composition
     [
         s => addUniforms(s, features),
@@ -362,4 +362,4 @@ export const wrap = (shader, features = {}) =>
         s => addErrorMarker(s)
     ].reduce((current, fn) => fn(current), shader)
 
-export default wrap
+export default compile

@@ -9,8 +9,7 @@
 				"preact": "https://esm.sh/preact@10.26.0",
 				"htm": "https://esm.sh/htm@3.1.1",
 				"chai": "https://esm.sh/chai@5.2.0",
-				"twgl": "https://esm.sh/twgl.js@5.5.3",
-				"zod": "https://esm.sh/zod@3.24.2"
+				"twgl": "https://esm.sh/twgl.js@5.5.3"
 			}
 		}
 	</script>
@@ -25,7 +24,7 @@
 <body>
   <canvas id="canvas"></canvas>
   <script type="module">
-    const { make } = await import("./PaperCrane.mjs");
+    const { make } = await import("./Wish.mjs");
     const canvas = document.getElementById("canvas");
     const render = await make({
       canvas, fragmentShader: `
@@ -33,7 +32,10 @@
         return vec3(uv.x, 0.5, uv.y);
       }
     ` });
-    render();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(render);
+      render();
+    });
   </script>
 </body>
 

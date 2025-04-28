@@ -1,5 +1,5 @@
 {
-  "name": "paper-crane",
+  "name": "@zuru/wish",
   "version": "1.0.0",
   "description": "To install dependencies:",
   "main": "index.mjs",
@@ -8,7 +8,15 @@
     "start": "live-server --port=7355"
   },
   "author": "hypnodroid <iam@hypnodroid.com>",
+  "dependencies": {
+    "twgl": "@5.5.3"
+  },
   "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./Wish.mjs",
+    "./compile": "./Shader.mjs"
+  },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
     "live-server": "^1.2.2",

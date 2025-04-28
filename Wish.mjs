@@ -12,7 +12,7 @@ import {
 
 import {make as makeResolutionRatio} from './ResolutionRatioCalculator.mjs'
 
-import { wrap as wrapShader } from './Shader.mjs'
+import { compile } from './Shader.mjs'
 import { wrap as wrapFeatures } from './Features.mjs'
 
 const defaultVertexShader = `#version 300 es
@@ -144,6 +144,21 @@ const isUniform = (value) => {
 }
 
 
+/**
+ * @param {Object} deps
+ * @param {HTMLCanvasElement} deps.canvas
+ * @param {HTMLImageElement} deps.initialImage
+ * @param {string} deps.fragmentShader
+ * @returns {Function}
+ * @description
+ * This function creates a new render function.
+ * It initializes the WebGL context, sets up double buffering, and sets up the rendering loop.
+ * It also handles shader compilation and uniform management.
+ *
+ * @example
+ * const render = make({canvas, initialImage, fragmentShader})
+ * render()
+ */
 export const make = async (deps) => { // Removed async as it's not used
     const {canvas, initialImage, fragmentShader} = deps
     const startTime = performance.now()
@@ -198,6 +213,19 @@ export const make = async (deps) => { // Removed async as it's not used
     }
 
     let programInfo
+    /**
+     * @param {Object | string | undefined} props
+     * @returns {boolean}
+     * @description
+     * render is the main function that renders a frame. it can take props to update the shader and/or features.
+     * it can also take no props to just render the frame.
+     *
+     * @example
+     * const render = make({canvas, initialImage, fragmentShader})
+     * render()
+     * render({fragmentShader: 'new shader'})
+     * render({features: {newFeature: true}})
+     */
     const render = (props) => {
 
         let changedShader = false;
@@ -223,7 +251,7 @@ export const make = async (deps) => { // Removed async as it's not used
             ...features
         };
         const wrappedUniforms = wrapFeatures(uniforms);
-        const wrappedShader = wrapShader(rawShader, wrappedUniforms);
+        const wrappedShader = compile(rawShader, wrappedUniforms);
         // 4. Check if shader needs recompile
         if (rawShader !== lastShader || !programInfo) {
             programInfo = createProgramInfo(gl, [defaultVertexShader, wrappedShader]);

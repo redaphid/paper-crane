@@ -1,10 +1,10 @@
 import { expect } from "chai";
-import { make } from "./PaperCrane.mjs";
+import { make } from ".";
 import { getPixelColor, setupTestEnvironment, cleanupTestEnvironment, timeout } from "./testHelpers.mjs";
 
-const cranesContainer = document.getElementById("paper-cranes");
+const cranesContainer = document.getElementById("wishes");
 
-describe("PaperCrane", () => {
+describe("Wish", () => {
   let render;
   /** @type {HTMLCanvasElement} */
   let canvas;

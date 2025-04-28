@@ -1,6 +1,6 @@
-import { make } from './PaperCrane.mjs';
+import { make } from './Wish.mjs';
 
-const cranesContainer = document.getElementById("paper-cranes");
+const cranesContainer = document.getElementById("wishes");
 
 /**
  * Reads the color of a single pixel from a canvas.
@@ -22,15 +22,15 @@ export const getPixelColor = (canvas, x, y) => {
 };
 
 /**
- * Sets up the test environment for a PaperCrane test.
- * Creates a canvas, appends it to the DOM, and initializes PaperCrane.
+ * Sets up the test environment for a Wish test.
+ * Creates a canvas, appends it to the DOM, and initializes Wish.
  * @param {object} [options] Options to pass to the make function.
  * @returns {Promise<{render: Function, canvas: HTMLCanvasElement}>} An object containing the render function and the canvas element.
  */
 export const setupTestEnvironment = async (options = {}) => {
   const canvas = document.createElement("canvas");
   if (!cranesContainer) {
-    throw new Error("Could not find #paper-cranes container element");
+    throw new Error("Could not find #wishes container element");
   }
   cranesContainer.appendChild(canvas);
   const render = await make({ canvas, ...options });
@@ -38,7 +38,7 @@ export const setupTestEnvironment = async (options = {}) => {
 };
 
 /**
- * Cleans up the test environment after a PaperCrane test.
+ * Cleans up the test environment after a Wish test.
  * Removes the canvas and replaces it with a static image capture.
  * @param {Function & {cleanup: Function}} render The render function returned by setupTestEnvironment.
  * @param {HTMLCanvasElement} canvas The canvas element returned by setupTestEnvironment.
@@ -55,7 +55,7 @@ export const cleanupTestEnvironment = (render, canvas) => {
   if (cranesContainer && image) {
     cranesContainer.appendChild(image);
   } else if (!cranesContainer) {
-      console.warn("Could not find #paper-cranes container element during cleanup");
+      console.warn("Could not find #wishes container element during cleanup");
   }
 };
 
