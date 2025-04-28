@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "packages/comfyui-api-nodes/package.json"
+      - "package.json"
       - ".github/workflows"
 
 jobs:
